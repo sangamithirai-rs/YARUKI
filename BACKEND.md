@@ -301,3 +301,15 @@ secret API keys
 ```
 
 Only public/publishable Supabase credentials should be used in the browser.
+## Security
+
+Row Level Security (RLS) is enabled on all application tables.
+
+Users can only access their own records.
+
+Subject-linked records such as marks, exams, assignments, study sessions,
+and study materials also verify that the referenced subject belongs to
+the authenticated user.
+
+Supabase Storage uses a private `study-materials` bucket with
+user-specific folder access policies.
