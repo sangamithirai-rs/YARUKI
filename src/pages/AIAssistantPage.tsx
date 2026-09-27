@@ -1,5 +1,7 @@
 
 import { useState } from 'react'
+import AIChat from '../components/AIChat'
+import AIInput from '../components/AIInput'
 import '../App.css'
 
 type Message = {
@@ -54,62 +56,20 @@ export default function AIAssistantPage() {
       </header>
 
       <section className="ai-chat" aria-label="AI Assistant chat">
-        <div className="ai-messages" aria-live="polite">
-          {messages.length === 0 ? (
-            <div className="ai-welcome">
-              <div className="ai-orb" aria-hidden="true">✦</div>
-              <h2>What would you like to work on?</h2>
-              <p>Choose a prompt or type your own question below.</p>
-              <div className="ai-suggestions">
-                {suggestions.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => handleSend(suggestion)}
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            messages.map((message) => (
-              <article
-                className={`ai-message ai-message-${message.role}`}
-                key={message.id}
-              >
-                <span className="ai-message-label">
-                  {message.role === 'user' ? 'You' : 'YARUKI AI'}
-                </span>
-                <p>{message.content}</p>
-              </article>
-            ))
-          )}
+        <AIChat
+          messages={messages}
+          loading={loading}
+          suggestions={suggestions}
+          onSuggestionClick={handleSend}
+        />
 
-          {loading && (
-            <div className="ai-typing" role="status">
-              YARUKI AI is thinking…
-            </div>
-          )}
-        </div>
+        <AIInput
+          value={input}
+          loading={loading}
+          onChange={setInput}
+          onSend={() => handleSend()}
+        />
 
-        <form
-          className="ai-composer"
-          onSubmit={(event) => {
-            event.preventDefault()
-            handleSend()
-          }}
-        >
-          <input
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask YARUKI anything about studying..."
-            aria-label="Your message"
-          />
-          <button type="submit" disabled={!input.trim() || loading}>
-            Send
-          </button>
-        </form>
         <p className="ai-disclaimer">
           AI responses are a demo placeholder and may not be accurate.
         </p>
