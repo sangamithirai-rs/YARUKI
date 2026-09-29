@@ -4831,3 +4831,12 @@
     transition: none;
   }
 }
+.materials-edit-fields {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+
+.materials-edit-fields .form-field {
+  min-width: 0;
+}

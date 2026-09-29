@@ -119,3 +119,41 @@ export async function deleteMaterial(
     throw databaseError
   }
 }
+// Update a material's title and/or subject
+export async function updateMaterial(
+  id: string,
+  updates: {
+    title?: string
+    subjectId?: string | null
+  }
+): Promise<StudyMaterial> {
+  const databaseUpdates: {
+    title?: string
+    subject_id?: string | null
+  } = {}
+
+  if (updates.title !== undefined) {
+    databaseUpdates.title = updates.title
+  }
+
+  if (updates.subjectId !== undefined) {
+    databaseUpdates.subject_id = updates.subjectId
+  }
+
+  if (Object.keys(databaseUpdates).length === 0) {
+    throw new Error('No material changes provided')
+  }
+
+  const { data, error } = await supabase
+    .from('study_materials')
+    .update(databaseUpdates)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}

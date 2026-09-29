@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { FormEvent } from 'react'
 import {
   deleteMaterial,
   getMaterialUrl,
   getMaterials,
+  updateMaterial,
   uploadMaterial,
   type StudyMaterial,
 } from '../services/materialService'
@@ -23,6 +25,10 @@ export default function MaterialsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editSubjectId, setEditSubjectId] = useState('')
+  const [savingId, setSavingId] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -159,6 +165,50 @@ export default function MaterialsPage() {
       setOpeningId(null)
     }
   }
+  function handleStartEdit(material: StudyMaterial) {
+  setEditingId(material.id)
+  setEditTitle(material.title)
+  setEditSubjectId(material.subject_id ?? '')
+  setError('')
+}
+
+function handleCancelEdit() {
+  setEditingId(null)
+  setEditTitle('')
+  setEditSubjectId('')
+}
+
+async function handleSaveEdit(materialId: string) {
+  const cleanTitle = editTitle.trim()
+
+  if (!cleanTitle) {
+    setError('Please enter a material title.')
+    return
+  }
+
+  try {
+    setSavingId(materialId)
+    setError('')
+
+    const updatedMaterial = await updateMaterial(materialId, {
+      title: cleanTitle,
+      subjectId: editSubjectId || null,
+    })
+
+    setMaterials((current) =>
+      current.map((material) =>
+        material.id === materialId ? updatedMaterial : material
+      )
+    )
+
+    handleCancelEdit()
+  } catch (err) {
+    console.error('Unable to update material:', err)
+    setError('Unable to update this material. Please try again.')
+  } finally {
+    setSavingId(null)
+  }
+}
 
   async function handleDelete(material: StudyMaterial) {
     if (!material.file_path) {
@@ -352,7 +402,7 @@ export default function MaterialsPage() {
           </div>
         ) : (
           <div className="materials-grid">
-            {filteredMaterials.map((material) => (
+            {filteredMaterials.map((material: StudyMaterial) => (
               <article className="material-card" key={material.id}>
                 <div className="material-card-top">
                   <span className="material-file-type">
@@ -364,16 +414,54 @@ export default function MaterialsPage() {
                 </div>
 
                 <div className="material-card-content">
-                  <h3>{material.title}</h3>
-                  <p className="material-file-name">
-                    {material.file_name ?? 'File name unavailable'}
-                  </p>
-                  <span className="material-subject-name">
-                    {material.subject_id
-                      ? subjectNames.get(material.subject_id) ?? 'Subject'
-                      : 'Unassigned'}
-                  </span>
-                </div>
+  {editingId === material.id ? (
+    <div className="materials-edit-fields">
+      <div className="form-field">
+        <label htmlFor={`edit-title-${material.id}`}>
+          Material title
+        </label>
+        <input
+          id={`edit-title-${material.id}`}
+          type="text"
+          value={editTitle}
+          onChange={(event) => setEditTitle(event.target.value)}
+          maxLength={120}
+          required
+        />
+      </div>
+
+      <div className="form-field">
+        <label htmlFor={`edit-subject-${material.id}`}>
+          Subject
+        </label>
+        <select
+          id={`edit-subject-${material.id}`}
+          value={editSubjectId}
+          onChange={(event) => setEditSubjectId(event.target.value)}
+        >
+          <option value="">No subject</option>
+          {subjects.map((subject) => (
+            <option key={subject.id} value={subject.id}>
+              {subject.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  ) : (
+    <>
+      <h3>{material.title}</h3>
+      <p className="material-file-name">
+        {material.file_name ?? 'File name unavailable'}
+      </p>
+      <span className="material-subject-name">
+        {material.subject_id
+          ? subjectNames.get(material.subject_id) ?? 'Subject'
+          : 'Unassigned'}
+      </span>
+    </>
+  )}
+</div>
 
                 <div className="material-card-actions">
                   <button
@@ -386,6 +474,36 @@ export default function MaterialsPage() {
                   >
                     {openingId === material.id ? 'Opening…' : 'Open file'}
                   </button>
+                  {editingId === material.id ? (
+  <>
+    <button
+      type="button"
+      className="page-primary-button"
+      onClick={() => handleSaveEdit(material.id)}
+      disabled={savingId === material.id}
+    >
+      {savingId === material.id ? 'Saving…' : 'Save changes'}
+    </button>
+
+    <button
+      type="button"
+      className="secondary-button"
+      onClick={handleCancelEdit}
+      disabled={savingId === material.id}
+    >
+      Cancel
+    </button>
+  </>
+) : (
+  <button
+    type="button"
+    className="secondary-button"
+    onClick={() => handleStartEdit(material)}
+    disabled={savingId === material.id}
+  >
+    Edit
+  </button>
+)}
 
                   <button
                     type="button"
