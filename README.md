@@ -1,75 +1,44 @@
-# React + TypeScript + Vite
+# YARUKI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Your academic space, organized.**
 
-Currently, two official plugins are available:
+YARUKI is a student productivity web application designed to help students organize their academic life in one place.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+🌐 **Live website:** [yaruki.vercel.app](https://yaruki.vercel.app)
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Dashboard** — View an overview of your academic activity.
+- **Subjects** — Organize your subjects and course details.
+- **Marks** — Track assessment marks.
+- **Exams** — Keep track of upcoming exams.
+- **Assignments** — Manage assignment tasks and deadlines.
+- **Study Planner** — Organize study sessions and plans.
+- **Materials** — Manage study materials.
+- **AI Assistant** — Explore study support through a demo chat. Real AI responses are not connected yet.
+- **Authentication** — Sign up and log in with Supabase Auth.
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- React
+- TypeScript
+- Vite
+- Supabase
+  - PostgreSQL
+  - Authentication
+  - Storage
+- CSS
+- Vercel
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Getting Started
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Prerequisites
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js and npm
+- A Supabase project
 
-```
+### 1. Clone the repository
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+```bash
+git clone https://github.com/sangamithirai-rs/YARUKI.git
+cd YARUKI
