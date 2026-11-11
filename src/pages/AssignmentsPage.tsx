@@ -506,7 +506,7 @@ function AssignmentsPage() {
 
                 {dueDays !== null &&
                   dueDays < 0 &&
-                  !editingAssignment?.completed && (
+                  !completed && (
                     <p className="assignment-date-hint">
                       This date has already passed, so the assignment will
                       show as overdue.
