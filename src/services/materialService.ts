@@ -2,6 +2,32 @@ import { supabase } from '../lib/supabase'
 
 const BUCKET_NAME = 'study-materials'
 
+export const MAX_MATERIAL_SIZE_MB = 10
+
+export const ALLOWED_MATERIAL_EXTENSIONS = [
+  'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx',
+  'txt', 'md', 'csv', 'png', 'jpg', 'jpeg', 'gif', 'webp',
+]
+
+// Returns an error message, or null if the file is acceptable.
+export function validateMaterialFile(file: File): string | null {
+  const extension = file.name.split('.').pop()?.toLowerCase() ?? ''
+
+  if (!ALLOWED_MATERIAL_EXTENSIONS.includes(extension)) {
+    return `This file type is not supported. Allowed: ${ALLOWED_MATERIAL_EXTENSIONS.join(', ')}.`
+  }
+
+  if (file.size === 0) {
+    return 'This file is empty.'
+  }
+
+  if (file.size > MAX_MATERIAL_SIZE_MB * 1024 * 1024) {
+    return `This file is too large. The maximum size is ${MAX_MATERIAL_SIZE_MB} MB.`
+  }
+
+  return null
+}
+
 export interface StudyMaterial {
   id: string
   user_id: string
@@ -39,6 +65,12 @@ export async function uploadMaterial(
 
   if (!user) {
     throw new Error('User is not logged in')
+  }
+
+  const validationError = validateMaterialFile(file)
+
+  if (validationError) {
+    throw new Error(validationError)
   }
 
   const fileExtension = file.name.split('.').pop() || 'file'
@@ -97,19 +129,13 @@ export async function getMaterialUrl(
   return data.signedUrl
 }
 
-// Delete a material
+// Delete a material.
+// The database row goes first, so a failure never leaves a row that
+// points to a missing file. A leftover file is harmless and is logged.
 export async function deleteMaterial(
   id: string,
   filePath: string
 ): Promise<void> {
-  const { error: fileError } = await supabase.storage
-    .from(BUCKET_NAME)
-    .remove([filePath])
-
-  if (fileError) {
-    throw fileError
-  }
-
   const { error: databaseError } = await supabase
     .from('study_materials')
     .delete()
@@ -118,7 +144,16 @@ export async function deleteMaterial(
   if (databaseError) {
     throw databaseError
   }
+
+  const { error: fileError } = await supabase.storage
+    .from(BUCKET_NAME)
+    .remove([filePath])
+
+  if (fileError) {
+    console.error('Material deleted but file removal failed:', fileError)
+  }
 }
+
 // Update a material's title and/or subject
 export async function updateMaterial(
   id: string,

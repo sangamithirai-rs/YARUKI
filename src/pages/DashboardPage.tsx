@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useHashNavigation } from '../lib/useHashNavigation'
 import { supabase } from '../lib/supabase'
 import { getSubjects } from '../services/subjectService'
 import { getExams } from '../services/examService'
@@ -7,13 +8,28 @@ import { getStudySessions } from '../services/SessionService'
 import DashboardLayout from '../layouts/DashboardLayout'
 import Header from '../components/Header'
 
+type UpcomingItem = {
+  id: string
+  title: string
+  kind: 'Exam' | 'Assignment'
+  date: Date
+}
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+  })
+}
+
 function DashboardPage() {
   const [email, setEmail] = useState<string>()
   const [subjectCount, setSubjectCount] = useState(0)
   const [examCount, setExamCount] = useState(0)
   const [assignmentCount, setAssignmentCount] = useState(0)
   const [studyMinutes, setStudyMinutes] = useState(0)
-  const [activeItem, setActiveItem] = useState('Dashboard')
+  const [activeItem, setActiveItem] = useHashNavigation()
+  const [upcoming, setUpcoming] = useState<UpcomingItem[]>([])
 
   const [loading, setLoading] = useState(true)
 
@@ -50,6 +66,33 @@ function DashboardPage() {
           assignments.filter((assignment) => !assignment.completed)
             .length
         )
+        const upcomingExams: UpcomingItem[] = exams
+          .filter((exam) => new Date(exam.exam_date) >= now)
+          .map((exam) => ({
+            id: `exam-${exam.id}`,
+            title: exam.title,
+            kind: 'Exam',
+            date: new Date(exam.exam_date),
+          }))
+
+        const dueAssignments: UpcomingItem[] = assignments
+          .filter(
+            (assignment) =>
+              !assignment.completed && assignment.due_date
+          )
+          .map((assignment) => ({
+            id: `assignment-${assignment.id}`,
+            title: assignment.title,
+            kind: 'Assignment',
+            date: new Date(assignment.due_date as string),
+          }))
+
+        setUpcoming(
+          [...upcomingExams, ...dueAssignments]
+            .sort((a, b) => a.date.getTime() - b.date.getTime())
+            .slice(0, 5)
+        )
+
         setStudyMinutes(
           sessions.reduce(
             (total, session) =>
@@ -285,6 +328,34 @@ function DashboardPage() {
 
           </div>
 
+        </section>
+
+        {/* COMING UP */}
+        <section className="dashboard-panel">
+          <div className="panel-heading">
+            <div>
+              <p className="panel-kicker">COMING UP</p>
+              <h2>Next deadlines</h2>
+            </div>
+          </div>
+
+          {loading ? (
+            <p className="panel-text">Loading…</p>
+          ) : upcoming.length === 0 ? (
+            <p className="panel-text">
+              Nothing due. Add an exam or an assignment with a due
+              date and it will show up here.
+            </p>
+          ) : (
+            upcoming.map((item) => (
+              <div className="snapshot-row" key={item.id}>
+                <span>
+                  {item.title} · {item.kind}
+                </span>
+                <strong>{formatDate(item.date)}</strong>
+              </div>
+            ))
+          )}
         </section>
 
         {/* JOURNEY */}

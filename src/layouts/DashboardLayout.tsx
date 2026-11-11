@@ -1,15 +1,16 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Sidebar from '../components/Sidebar'
-import SubjectsPage from '../pages/SubjectsPage'
-import MarksPage from '../pages/MarksPage'
-import ExamsPage from '../pages/ExamsPage'
-import AssignmentsPage from '../pages/AssignmentsPage'
-import StudyPlannerPage from '../pages/StudyPlannerPage'
-import MaterialsPage from '../pages/MaterialsPage'
-import AIAssistantPage from '../pages/AIAssistantPage'
-import AnalyticsPage from '../pages/AnalyticsPage'
-import SettingsPage from '../pages/SettingsPage'
+
+const SubjectsPage = lazy(() => import('../pages/SubjectsPage'))
+const MarksPage = lazy(() => import('../pages/MarksPage'))
+const ExamsPage = lazy(() => import('../pages/ExamsPage'))
+const AssignmentsPage = lazy(() => import('../pages/AssignmentsPage'))
+const StudyPlannerPage = lazy(() => import('../pages/StudyPlannerPage'))
+const MaterialsPage = lazy(() => import('../pages/MaterialsPage'))
+const AIAssistantPage = lazy(() => import('../pages/AIAssistantPage'))
+const AnalyticsPage = lazy(() => import('../pages/AnalyticsPage'))
+const SettingsPage = lazy(() => import('../pages/SettingsPage'))
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -106,7 +107,11 @@ function DashboardLayout({
           </div>
         </div>
 
-        {renderPage()}
+        <Suspense
+          fallback={<p className="page-loading">Loading…</p>}
+        >
+          {renderPage()}
+        </Suspense>
       </div>
     </div>
   )

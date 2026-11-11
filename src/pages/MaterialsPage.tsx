@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
+  ALLOWED_MATERIAL_EXTENSIONS,
   deleteMaterial,
   getMaterialUrl,
   getMaterials,
   updateMaterial,
   uploadMaterial,
+  validateMaterialFile,
   type StudyMaterial,
 } from '../services/materialService'
 import { getSubjects } from '../services/subjectService'
@@ -118,6 +120,13 @@ export default function MaterialsPage() {
       return
     }
 
+    const validationError = validateMaterialFile(file)
+
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     try {
       setUploading(true)
       setError('')
@@ -139,7 +148,9 @@ export default function MaterialsPage() {
     } catch (err) {
       console.error('Unable to upload material:', err)
       setError(
-        'Unable to upload this material. Check the file size and try again.'
+        err instanceof Error && err.message
+          ? err.message
+          : 'Unable to upload this material. Please try again.'
       )
     } finally {
       setUploading(false)
@@ -316,9 +327,25 @@ async function handleSaveEdit(materialId: string) {
                 ref={fileInputRef}
                 id="material-file"
                 type="file"
-                onChange={(event) =>
-                  setFile(event.target.files?.[0] ?? null)
-                }
+                accept={ALLOWED_MATERIAL_EXTENSIONS.map(
+                  (extension) => `.${extension}`
+                ).join(',')}
+                onChange={(event) => {
+                  const selected = event.target.files?.[0] ?? null
+                  const problem = selected
+                    ? validateMaterialFile(selected)
+                    : null
+
+                  if (problem) {
+                    setError(problem)
+                    setFile(null)
+                    event.target.value = ''
+                    return
+                  }
+
+                  setError('')
+                  setFile(selected)
+                }}
                 required
               />
               {file && (
