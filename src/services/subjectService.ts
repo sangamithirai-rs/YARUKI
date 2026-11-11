@@ -60,8 +60,8 @@ export async function updateSubject(
   id: string,
   updates: {
     name?: string
-    code?: string
-    credits?: number
+    code?: string | null
+    credits?: number | null
   }
 ): Promise<Subject> {
   const { data, error } = await supabase
