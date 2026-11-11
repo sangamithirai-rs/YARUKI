@@ -2553,6 +2553,7 @@
 }
 
 .exams-form-grid select,
+.exams-toolbar select,
 .exams-form-grid textarea {
   width: 100%;
   border: 1px solid var(--color-border-strong);
@@ -2566,7 +2567,8 @@
     box-shadow var(--transition-fast);
 }
 
-.exams-form-grid select {
+.exams-form-grid select,
+.exams-toolbar select {
   min-height: 46px;
   padding: 0 13px;
 }
@@ -2579,6 +2581,7 @@
 }
 
 .exams-form-grid select:focus,
+.exams-toolbar select:focus,
 .exams-form-grid textarea:focus {
   outline: none;
   border-color: var(--color-accent);
@@ -2589,7 +2592,7 @@
 
 .exams-overview {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 14px;
   margin-bottom: 30px;
 }
@@ -4901,5 +4904,63 @@
   .ai-message {
     max-width: 95%;
     padding: 13px 14px;
+  }
+}
+
+/* Exams: next-exam card, toolbar, urgency, hints */
+
+.exam-summary-card-next {
+  grid-column: span 2;
+}
+
+.exam-summary-card-next strong {
+  font-size: 19px;
+  overflow-wrap: anywhere;
+}
+
+.exam-summary-card small {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.exams-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+  padding: 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.exam-countdown-urgent {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.exam-countdown-soon {
+  background: #fdf3e1;
+  color: #8a5a12;
+}
+
+.exam-countdown-past {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.exam-date-hint {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .exam-summary-card-next {
+    grid-column: 1 / -1;
+  }
+
+  .exams-toolbar {
+    grid-template-columns: 1fr;
   }
 }
