@@ -1,5 +1,4 @@
-
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import {
   addAssignment,
   deleteAssignment,
@@ -9,8 +8,108 @@ import {
 import type { Assignment } from '../services/assignmentService'
 import { getSubjects } from '../services/subjectService'
 import type { Subject } from '../types/database'
+import { getErrorMessage } from '../lib/errors'
+import {
+  dateKeyFromToday,
+  daysFromToday,
+  parseDay,
+  toDateKey,
+} from '../lib/dates'
 
-type AssignmentFilter = 'all' | 'pending' | 'completed'
+const MAX_TITLE_LENGTH = 100
+const MAX_DESCRIPTION_LENGTH = 1000
+
+type AssignmentFilter = 'all' | 'pending' | 'overdue' | 'completed'
+
+type AssignmentGroup = {
+  key: string
+  label: string
+  items: Assignment[]
+}
+
+function getDays(assignment: Assignment): number | null {
+  return assignment.due_date ? daysFromToday(assignment.due_date) : null
+}
+
+function isOverdue(assignment: Assignment): boolean {
+  const days = getDays(assignment)
+
+  return !assignment.completed && days !== null && days < 0
+}
+
+function formatDueDate(date: string | null): string {
+  if (!date) return 'No due date'
+
+  return parseDay(date).toLocaleDateString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function getDueLabel(assignment: Assignment): string {
+  if (assignment.completed) return 'Completed'
+
+  const days = getDays(assignment)
+
+  if (days === null) return 'No due date'
+
+  if (days < 0) {
+    const late = Math.abs(days)
+
+    return `${late} ${late === 1 ? 'day' : 'days'} overdue`
+  }
+
+  if (days === 0) return 'Due today'
+  if (days === 1) return 'Due tomorrow'
+
+  return `${days} days left`
+}
+
+// Earliest due date first; assignments without a date go last.
+function byDueDate(a: Assignment, b: Assignment): number {
+  if (!a.due_date && !b.due_date) return 0
+  if (!a.due_date) return 1
+  if (!b.due_date) return -1
+
+  return toDateKey(a.due_date).localeCompare(toDateKey(b.due_date))
+}
+
+function buildGroups(items: Assignment[]): AssignmentGroup[] {
+  const pending = items.filter((assignment) => !assignment.completed)
+
+  const overdue = pending.filter(isOverdue).sort(byDueDate)
+
+  const soon = pending
+    .filter((assignment) => {
+      const days = getDays(assignment)
+
+      return days !== null && days >= 0 && days <= 7
+    })
+    .sort(byDueDate)
+
+  const later = pending
+    .filter((assignment) => {
+      const days = getDays(assignment)
+
+      return days !== null && days > 7
+    })
+    .sort(byDueDate)
+
+  const undated = pending.filter((assignment) => !assignment.due_date)
+
+  const done = items
+    .filter((assignment) => assignment.completed)
+    .sort((a, b) => byDueDate(b, a))
+
+  return [
+    { key: 'overdue', label: 'Overdue', items: overdue },
+    { key: 'soon', label: 'Due in the next 7 days', items: soon },
+    { key: 'later', label: 'Later', items: later },
+    { key: 'undated', label: 'No due date', items: undated },
+    { key: 'done', label: 'Completed', items: done },
+  ].filter((group) => group.items.length > 0)
+}
 
 function AssignmentsPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([])
@@ -29,33 +128,41 @@ function AssignmentsPage() {
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [subjectId, setSubjectId] = useState('')
+
   const [filter, setFilter] = useState<AssignmentFilter>('all')
+  const [search, setSearch] = useState('')
+  const [subjectFilter, setSubjectFilter] = useState('')
 
   useEffect(() => {
+    let isMounted = true
+
     async function loadPageData() {
       try {
-        setLoading(true)
-        setError('')
-
         const [assignmentData, subjectData] = await Promise.all([
           getAssignments(),
           getSubjects(),
         ])
 
-        setAssignments(assignmentData)
-        setSubjects(subjectData)
+        if (isMounted) {
+          setAssignments(assignmentData)
+          setSubjects(subjectData)
+        }
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Unable to load assignments.'
-        )
+        if (isMounted) {
+          setError(getErrorMessage(err, 'Unable to load assignments.'))
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
-    loadPageData()
+    void loadPageData()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   function resetForm() {
@@ -81,7 +188,7 @@ function AssignmentsPage() {
     setEditingAssignment(assignment)
     setTitle(assignment.title)
     setDescription(assignment.description ?? '')
-    setDueDate(assignment.due_date ?? '')
+    setDueDate(assignment.due_date ? toDateKey(assignment.due_date) : '')
     setSubjectId(assignment.subject_id ?? '')
     setError('')
     setShowForm(true)
@@ -96,6 +203,18 @@ function AssignmentsPage() {
 
     if (!trimmedTitle) {
       setError('Please enter an assignment title.')
+      return
+    }
+
+    if (trimmedTitle.length > MAX_TITLE_LENGTH) {
+      setError(`Title must be ${MAX_TITLE_LENGTH} characters or fewer.`)
+      return
+    }
+
+    if (trimmedDescription.length > MAX_DESCRIPTION_LENGTH) {
+      setError(
+        `Description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer.`
+      )
       return
     }
 
@@ -128,11 +247,7 @@ function AssignmentsPage() {
 
       resetForm()
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to save assignment.'
-      )
+      setError(getErrorMessage(err, 'Unable to save assignment.'))
     } finally {
       setSaving(false)
     }
@@ -148,16 +263,10 @@ function AssignmentsPage() {
       })
 
       setAssignments((current) =>
-        current.map((item) =>
-          item.id === updated.id ? updated : item
-        )
+        current.map((item) => (item.id === updated.id ? updated : item))
       )
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to update assignment status.'
-      )
+      setError(getErrorMessage(err, 'Unable to update assignment status.'))
     } finally {
       setTogglingId(null)
     }
@@ -180,11 +289,7 @@ function AssignmentsPage() {
         current.filter((item) => item.id !== assignment.id)
       )
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to delete assignment.'
-      )
+      setError(getErrorMessage(err, 'Unable to delete assignment.'))
     } finally {
       setDeletingId(null)
     }
@@ -199,71 +304,65 @@ function AssignmentsPage() {
     )
   }
 
-  function formatDueDate(date: string | null) {
-    if (!date) return 'No due date'
-
-    return new Date(`${date}T00:00:00`).toLocaleDateString(
-      undefined,
-      {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }
-    )
-  }
-
-  function getDaysUntilDue(date: string | null) {
-    if (!date) return null
-
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    const dueDay = new Date(`${date}T00:00:00`)
-    return Math.round(
-      (dueDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    )
-  }
-
-  function getDueLabel(assignment: Assignment) {
-    if (assignment.completed) return 'Completed'
-
-    const days = getDaysUntilDue(assignment.due_date)
-
-    if (days === null) return 'No due date'
-    if (days < 0) return `${Math.abs(days)} days overdue`
-    if (days === 0) return 'Due today'
-    if (days === 1) return 'Due tomorrow'
-
-    return `${days} days left`
-  }
-
   const pendingCount = assignments.filter(
     (assignment) => !assignment.completed
   ).length
 
-  const completedCount = assignments.filter(
-    (assignment) => assignment.completed
-  ).length
+  const completedCount = assignments.length - pendingCount
+  const overdueCount = assignments.filter(isOverdue).length
 
-  const overdueCount = assignments.filter((assignment) => {
-    const days = getDaysUntilDue(assignment.due_date)
-    return !assignment.completed && days !== null && days < 0
-  }).length
+  const completionRate =
+    assignments.length > 0
+      ? Math.round((completedCount / assignments.length) * 100)
+      : 0
 
-  const filteredAssignments = useMemo(() => {
-    const filtered = assignments.filter((assignment) => {
-      if (filter === 'pending') return !assignment.completed
-      if (filter === 'completed') return assignment.completed
-      return true
-    })
+  const query = search.trim().toLowerCase()
 
-    return filtered.sort((a, b) => {
-      if (!a.due_date && !b.due_date) return 0
-      if (!a.due_date) return 1
-      if (!b.due_date) return -1
-      return a.due_date.localeCompare(b.due_date)
-    })
-  }, [assignments, filter])
+  const filteredAssignments = assignments.filter((assignment) => {
+    if (filter === 'pending' && assignment.completed) return false
+    if (filter === 'completed' && !assignment.completed) return false
+    if (filter === 'overdue' && !isOverdue(assignment)) return false
+
+    if (subjectFilter === 'none' && assignment.subject_id) return false
+
+    if (
+      subjectFilter &&
+      subjectFilter !== 'none' &&
+      assignment.subject_id !== subjectFilter
+    ) {
+      return false
+    }
+
+    if (
+      query &&
+      !`${assignment.title} ${assignment.description ?? ''}`
+        .toLowerCase()
+        .includes(query)
+    ) {
+      return false
+    }
+
+    return true
+  })
+
+  const groups = buildGroups(filteredAssignments)
+  const filtersActive =
+    filter !== 'all' || query !== '' || subjectFilter !== ''
+
+  function clearFilters() {
+    setFilter('all')
+    setSearch('')
+    setSubjectFilter('')
+  }
+
+  const dueDays = dueDate ? daysFromToday(dueDate) : null
+
+  const filterOptions: { value: AssignmentFilter; label: string; count: number }[] = [
+    { value: 'all', label: 'All', count: assignments.length },
+    { value: 'pending', label: 'Pending', count: pendingCount },
+    { value: 'overdue', label: 'Overdue', count: overdueCount },
+    { value: 'completed', label: 'Completed', count: completedCount },
+  ]
 
   return (
     <main className="page-main assignments-page">
@@ -300,9 +399,26 @@ function AssignmentsPage() {
 
         <div className="assignment-summary-card">
           <span>Overdue</span>
-          <strong>{overdueCount}</strong>
+          <strong className={overdueCount > 0 ? 'assignment-alert' : undefined}>
+            {overdueCount}
+          </strong>
         </div>
       </section>
+
+      {assignments.length > 0 && (
+        <div className="assignment-progress">
+          <div className="assignment-progress-text">
+            <span>
+              {completedCount} of {assignments.length} completed
+            </span>
+            <strong>{completionRate}%</strong>
+          </div>
+
+          <div className="assignment-progress-bar" aria-hidden="true">
+            <span style={{ width: `${completionRate}%` }} />
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <section className="subject-form-card assignment-form-card">
@@ -338,6 +454,7 @@ function AssignmentsPage() {
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
                   placeholder="e.g. Database normalization report"
+                  maxLength={MAX_TITLE_LENGTH}
                   disabled={saving}
                 />
               </div>
@@ -351,6 +468,44 @@ function AssignmentsPage() {
                   onChange={(event) => setDueDate(event.target.value)}
                   disabled={saving}
                 />
+
+                <div className="assignment-quick-dates">
+                  {[
+                    { label: 'Today', offset: 0 },
+                    { label: 'Tomorrow', offset: 1 },
+                    { label: 'In a week', offset: 7 },
+                  ].map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      onClick={() =>
+                        setDueDate(dateKeyFromToday(option.offset))
+                      }
+                      disabled={saving}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+
+                  {dueDate && (
+                    <button
+                      type="button"
+                      onClick={() => setDueDate('')}
+                      disabled={saving}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {dueDays !== null &&
+                  dueDays < 0 &&
+                  !editingAssignment?.completed && (
+                    <p className="assignment-date-hint">
+                      This date has already passed, so the assignment will
+                      show as overdue.
+                    </p>
+                  )}
               </div>
 
               <div className="form-field">
@@ -381,8 +536,12 @@ function AssignmentsPage() {
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
                   placeholder="Add instructions, requirements, or notes..."
+                  maxLength={MAX_DESCRIPTION_LENGTH}
                   disabled={saving}
                 />
+                <p className="assignment-date-hint">
+                  {description.length}/{MAX_DESCRIPTION_LENGTH}
+                </p>
               </div>
             </div>
 
@@ -430,29 +589,50 @@ function AssignmentsPage() {
           </div>
 
           <div className="assignment-filters" aria-label="Filter assignments">
-            <button
-              type="button"
-              className={filter === 'all' ? 'active' : ''}
-              onClick={() => setFilter('all')}
-            >
-              All
-            </button>
-            <button
-              type="button"
-              className={filter === 'pending' ? 'active' : ''}
-              onClick={() => setFilter('pending')}
-            >
-              Pending
-            </button>
-            <button
-              type="button"
-              className={filter === 'completed' ? 'active' : ''}
-              onClick={() => setFilter('completed')}
-            >
-              Completed
-            </button>
+            {filterOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={filter === option.value ? 'active' : ''}
+                onClick={() => setFilter(option.value)}
+              >
+                {option.label} ({option.count})
+              </button>
+            ))}
           </div>
         </div>
+
+        {!loading && assignments.length > 1 && (
+          <div className="assignments-controls">
+            <div className="form-field">
+              <label htmlFor="assignments-search">Search</label>
+              <input
+                id="assignments-search"
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search by title or description"
+              />
+            </div>
+
+            <div className="form-field">
+              <label htmlFor="assignments-subject-filter">Subject</label>
+              <select
+                id="assignments-subject-filter"
+                value={subjectFilter}
+                onChange={(event) => setSubjectFilter(event.target.value)}
+              >
+                <option value="">All subjects</option>
+                <option value="none">No subject</option>
+                {subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="assignments-state-card">
@@ -478,95 +658,114 @@ function AssignmentsPage() {
           <div className="assignments-state-card empty-state">
             <div className="empty-state-icon">✓</div>
             <h3>No matching assignments</h3>
-            <p>Try selecting a different filter.</p>
+            <p>Try a different search or filter.</p>
+            {filtersActive && (
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
-          <div className="assignments-list">
-            {filteredAssignments.map((assignment) => {
-              const daysUntil = getDaysUntilDue(assignment.due_date)
-              const overdue =
-                !assignment.completed &&
-                daysUntil !== null &&
-                daysUntil < 0
+          groups.map((group) => (
+            <div className="assignment-group" key={group.key}>
+              <h3 className="assignment-group-title">
+                {group.label} <span>{group.items.length}</span>
+              </h3>
 
-              return (
-                <article
-                  key={assignment.id}
-                  className={`assignment-card ${
-                    assignment.completed ? 'assignment-completed' : ''
-                  }`}
-                >
-                  <button
-                    type="button"
-                    className={`assignment-check ${
-                      assignment.completed ? 'checked' : ''
-                    }`}
-                    onClick={() => handleToggleCompleted(assignment)}
-                    disabled={togglingId === assignment.id}
-                    aria-label={
-                      assignment.completed
-                        ? `Mark ${assignment.title} as pending`
-                        : `Mark ${assignment.title} as completed`
-                    }
-                    aria-pressed={assignment.completed}
-                  >
-                    {assignment.completed ? '✓' : ''}
-                  </button>
+              <div className="assignments-list">
+                {group.items.map((assignment) => {
+                  const days = getDays(assignment)
+                  const overdue = isOverdue(assignment)
+                  const soon =
+                    !assignment.completed &&
+                    days !== null &&
+                    days >= 0 &&
+                    days <= 2
 
-                  <div className="assignment-card-content">
-                    <div className="assignment-card-heading">
-                      <h3>{assignment.title}</h3>
-                      <span
-                        className={`assignment-due-label ${
-                          overdue ? 'assignment-overdue' : ''
-                        } ${
-                          assignment.completed
-                            ? 'assignment-done-label'
-                            : ''
+                  return (
+                    <article
+                      key={assignment.id}
+                      className={`assignment-card ${
+                        assignment.completed ? 'assignment-completed' : ''
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        className={`assignment-check ${
+                          assignment.completed ? 'checked' : ''
                         }`}
+                        onClick={() => handleToggleCompleted(assignment)}
+                        disabled={togglingId === assignment.id}
+                        aria-label={
+                          assignment.completed
+                            ? `Mark ${assignment.title} as pending`
+                            : `Mark ${assignment.title} as completed`
+                        }
+                        aria-pressed={assignment.completed}
                       >
-                        {getDueLabel(assignment)}
-                      </span>
-                    </div>
+                        {assignment.completed ? '✓' : ''}
+                      </button>
 
-                    <p className="assignment-subject">
-                      {getSubjectName(assignment.subject_id)}
-                    </p>
+                      <div className="assignment-card-content">
+                        <div className="assignment-card-heading">
+                          <h3>{assignment.title}</h3>
+                          <span
+                            className={`assignment-due-label ${
+                              overdue ? 'assignment-overdue' : ''
+                            } ${soon ? 'assignment-soon' : ''} ${
+                              assignment.completed
+                                ? 'assignment-done-label'
+                                : ''
+                            }`}
+                          >
+                            {getDueLabel(assignment)}
+                          </span>
+                        </div>
 
-                    {assignment.description && (
-                      <p className="assignment-description">
-                        {assignment.description}
-                      </p>
-                    )}
+                        <p className="assignment-subject">
+                          {getSubjectName(assignment.subject_id)}
+                        </p>
 
-                    <div className="assignment-card-footer">
-                      <span>{formatDueDate(assignment.due_date)}</span>
+                        {assignment.description && (
+                          <p className="assignment-description">
+                            {assignment.description}
+                          </p>
+                        )}
 
-                      <div className="assignment-actions">
-                        <button
-                          type="button"
-                          onClick={() => openEditForm(assignment)}
-                        >
-                          Edit
-                        </button>
+                        <div className="assignment-card-footer">
+                          <span>{formatDueDate(assignment.due_date)}</span>
 
-                        <button
-                          type="button"
-                          className="delete-action"
-                          onClick={() => handleDelete(assignment)}
-                          disabled={deletingId === assignment.id}
-                        >
-                          {deletingId === assignment.id
-                            ? 'Deleting...'
-                            : 'Delete'}
-                        </button>
+                          <div className="assignment-actions">
+                            <button
+                              type="button"
+                              onClick={() => openEditForm(assignment)}
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              className="delete-action"
+                              onClick={() => handleDelete(assignment)}
+                              disabled={deletingId === assignment.id}
+                            >
+                              {deletingId === assignment.id
+                                ? 'Deleting...'
+                                : 'Delete'}
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </div>
+          ))
         )}
       </section>
     </main>
