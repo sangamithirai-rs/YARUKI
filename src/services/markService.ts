@@ -11,6 +11,20 @@ export interface Mark {
   created_at: string
 }
 
+// Get every mark for the logged-in user (used by the dashboard)
+export async function getAllMarks(): Promise<Mark[]> {
+  const { data, error } = await supabase
+    .from('marks')
+    .select('*')
+    .order('assessment_date', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return data ?? []
+}
+
 // Get marks for a subject
 export async function getMarks(subjectId: string): Promise<Mark[]> {
   const { data, error } = await supabase

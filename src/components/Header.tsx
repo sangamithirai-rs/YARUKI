@@ -1,12 +1,27 @@
 interface HeaderProps {
   email?: string
+  name?: string
 }
 
-function Header({ email }: HeaderProps) {
-  const username = email?.split('@')[0] || 'Student'
+function getGreeting(): string {
+  const hour = new Date().getHours()
+
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+
+  return 'Good evening'
+}
+
+function Header({ email, name }: HeaderProps) {
+  const fullName =
+    name?.trim() ||
+    email?.split('@')[0] ||
+    'Student'
+
+  const firstName = fullName.split(/\s+/)[0]
 
   const displayName =
-    username.charAt(0).toUpperCase() + username.slice(1)
+    firstName.charAt(0).toUpperCase() + firstName.slice(1)
 
   return (
     <header className="dashboard-header">
@@ -16,7 +31,7 @@ function Header({ email }: HeaderProps) {
         </p>
 
         <h1>
-          Good to see you, {displayName}.
+          {getGreeting()}, {displayName}.
         </h1>
 
         <p className="header-subtitle">
@@ -30,7 +45,7 @@ function Header({ email }: HeaderProps) {
         </div>
 
         <div className="profile-info">
-          <strong>{displayName}</strong>
+          <strong>{fullName}</strong>
 
           <span>{email}</span>
         </div>

@@ -4964,3 +4964,85 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Dashboard: clickable stats, alerts, today list, performance, checklist */
+
+.stat-card-link {
+  width: 100%;
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stat-card-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.stat-card small.stat-alert,
+.deadline-overdue {
+  color: var(--color-error);
+}
+
+.dashboard-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.dashboard-error button {
+  padding: 6px 14px;
+  border: 1px solid var(--color-error-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-error);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.today-list {
+  margin-bottom: 22px;
+}
+
+.performance-score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 18px 0 6px;
+  color: var(--color-text);
+  font-size: 40px;
+  font-weight: 720;
+  letter-spacing: -0.04em;
+}
+
+.performance-score small {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.deadlines-panel {
+  margin-bottom: 18px;
+}
+
+.journey-step-link {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.journey-step-link:hover strong {
+  color: var(--color-accent-hover);
+}
