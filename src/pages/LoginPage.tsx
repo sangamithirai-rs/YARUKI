@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { signIn } from '../services/authService'
+import { getErrorMessage } from '../lib/errors'
 
 interface LoginPageProps {
   onSwitchToSignup: () => void
@@ -30,8 +31,8 @@ function LoginPage({
       await signIn(email, password)
 
       onLoginSuccess()
-    } catch (err: any) {
-      setError(err.message || 'Unable to log in.')
+    } catch (err) {
+      setError(getErrorMessage(err, 'Unable to log in.'))
     } finally {
       setLoading(false)
     }

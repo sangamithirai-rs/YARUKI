@@ -196,7 +196,7 @@ deleteAssignment(id)
 
 File:
 
-`studySessionService.ts`
+`SessionService.ts`
 
 Functions:
 

@@ -18,67 +18,60 @@ function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadDashboard()
-  }, [])
+    let isMounted = true
 
-  async function loadDashboard() {
-    try {
-      setLoading(true)
+    async function loadDashboard() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+        const [subjects, exams, assignments, sessions] =
+          await Promise.all([
+            getSubjects(),
+            getExams(),
+            getAssignments(),
+            getStudySessions(),
+          ])
 
-      setEmail(user?.email)
+        if (!isMounted) {
+          return
+        }
 
-      const [
-        subjects,
-        exams,
-        assignments,
-        sessions,
-      ] = await Promise.all([
-        getSubjects(),
-        getExams(),
-        getAssignments(),
-        getStudySessions(),
-      ])
+        const now = new Date()
 
-      setSubjectCount(subjects.length)
-
-      const now = new Date()
-
-      const upcomingExams = exams.filter(
-        (exam) => new Date(exam.exam_date) >= now
-      )
-
-      const pendingAssignments =
-        assignments.filter(
-          (assignment) => !assignment.completed
+        setEmail(user?.email)
+        setSubjectCount(subjects.length)
+        setExamCount(
+          exams.filter((exam) => new Date(exam.exam_date) >= now)
+            .length
         )
-
-      const totalStudyMinutes =
-        sessions.reduce(
-          (total, session) =>
-            total + (session.duration_minutes ?? 0),
-          0
+        setAssignmentCount(
+          assignments.filter((assignment) => !assignment.completed)
+            .length
         )
-
-      setExamCount(upcomingExams.length)
-
-      setAssignmentCount(
-        pendingAssignments.length
-      )
-
-      setStudyMinutes(totalStudyMinutes)
-    } catch (error) {
-      console.error(
-        'Dashboard loading error:',
-        error
-      )
-    } finally {
-      setLoading(false)
+        setStudyMinutes(
+          sessions.reduce(
+            (total, session) =>
+              total + (session.duration_minutes ?? 0),
+            0
+          )
+        )
+      } catch (error) {
+        console.error('Dashboard loading error:', error)
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
     }
-  }
+
+    void loadDashboard()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   function formatStudyTime(minutes: number): string {
   const safeMinutes = Math.max(0, Math.round(minutes))

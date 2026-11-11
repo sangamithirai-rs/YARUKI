@@ -13,7 +13,7 @@ import type { Subject } from '../types/database'
 function MarksPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubjectId, setSelectedSubjectId] = useState('')
-  const [marks, setMarks] = useState<Mark[]>([])
+  const [loadedMarks, setMarks] = useState<Mark[]>([])
   const [loading, setLoading] = useState(true)
   const [marksLoading, setMarksLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -54,7 +54,6 @@ function MarksPage() {
 
   useEffect(() => {
     if (!selectedSubjectId) {
-      setMarks([])
       return
     }
 
@@ -77,6 +76,8 @@ function MarksPage() {
 
     loadSubjectMarks()
   }, [selectedSubjectId])
+
+  const marks = selectedSubjectId ? loadedMarks : []
 
   function resetForm() {
     setAssessmentName('')

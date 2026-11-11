@@ -6,6 +6,7 @@ import {
   updateSubject,
 } from '../services/subjectService'
 import type { Subject } from '../types/database'
+import { getErrorMessage } from '../lib/errors'
 
 function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])
@@ -23,22 +24,32 @@ function SubjectsPage() {
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  async function loadSubjects() {
-    try {
-      setLoading(true)
-      setError('')
-
-      const data = await getSubjects()
-      setSubjects(data)
-    } catch (err: any) {
-      setError(err.message || 'Unable to load subjects.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    loadSubjects()
+    let isMounted = true
+
+    async function loadSubjects() {
+      try {
+        const data = await getSubjects()
+
+        if (isMounted) {
+          setSubjects(data)
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(getErrorMessage(err, 'Unable to load subjects.'))
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    void loadSubjects()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   function resetForm() {
@@ -132,14 +143,16 @@ function SubjectsPage() {
       }
 
       resetForm()
-    } catch (err: any) {
+    } catch (err) {
       setError(
-        err.message ||
+        getErrorMessage(
+          err,
           `Unable to ${
             editingSubject
               ? 'update'
               : 'create'
           } subject.`
+        )
       )
     } finally {
       setSaving(false)
@@ -166,9 +179,9 @@ function SubjectsPage() {
           (item) => item.id !== subject.id
         )
       )
-    } catch (err: any) {
+    } catch (err) {
       setError(
-        err.message || 'Unable to delete subject.'
+        getErrorMessage(err, 'Unable to delete subject.')
       )
     } finally {
       setDeletingId(null)

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getErrorMessage } from '../lib/errors'
 import { signUp } from '../services/authService'
 
 interface SignupPageProps {
@@ -49,8 +50,8 @@ function SignupPage({
       } else {
         onSignupSuccess()
       }
-    } catch (err: any) {
-      setError(err.message || 'Unable to create account.')
+    } catch (err) {
+      setError(getErrorMessage(err, 'Unable to create account.'))
     } finally {
       setLoading(false)
     }

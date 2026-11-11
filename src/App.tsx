@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { User } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
@@ -7,7 +8,7 @@ import './App.css'
 type AuthMode = 'login' | 'signup'
 
 function App() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loading, setLoading] = useState(true)
 
