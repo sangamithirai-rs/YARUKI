@@ -29,7 +29,7 @@ export async function addAssignment(
   description?: string,
   dueDate?: string,
   subjectId?: string,
-  completed = false
+  completed = false,
 ): Promise<Assignment> {
   const {
     data: { user },
