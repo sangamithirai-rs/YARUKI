@@ -5413,3 +5413,42 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Assignments: explicit complete / reopen actions */
+
+.assignment-actions button.complete-action {
+  border: 1px solid var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.assignment-actions button.complete-action:hover:not(:disabled) {
+  background: var(--color-success);
+  color: #fff;
+}
+
+.assignment-actions button.reopen-action {
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+}
+
+.assignment-completed-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.assignment-completed-field input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  accent-color: var(--color-success);
+}
+
+.assignment-completed-field span {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 600;
+}

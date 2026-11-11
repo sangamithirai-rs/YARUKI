@@ -128,6 +128,7 @@ function AssignmentsPage() {
   const [description, setDescription] = useState('')
   const [dueDate, setDueDate] = useState('')
   const [subjectId, setSubjectId] = useState('')
+  const [completed, setCompleted] = useState(false)
 
   const [filter, setFilter] = useState<AssignmentFilter>('all')
   const [search, setSearch] = useState('')
@@ -170,6 +171,7 @@ function AssignmentsPage() {
     setDescription('')
     setDueDate('')
     setSubjectId('')
+    setCompleted(false)
     setEditingAssignment(null)
     setShowForm(false)
   }
@@ -179,6 +181,7 @@ function AssignmentsPage() {
     setDescription('')
     setDueDate('')
     setSubjectId('')
+    setCompleted(false)
     setEditingAssignment(null)
     setError('')
     setShowForm(true)
@@ -190,6 +193,7 @@ function AssignmentsPage() {
     setDescription(assignment.description ?? '')
     setDueDate(assignment.due_date ? toDateKey(assignment.due_date) : '')
     setSubjectId(assignment.subject_id ?? '')
+    setCompleted(assignment.completed)
     setError('')
     setShowForm(true)
   }
@@ -227,6 +231,7 @@ function AssignmentsPage() {
           description: trimmedDescription || null,
           due_date: dueDate || null,
           subject_id: subjectId || null,
+          completed,
         })
 
         setAssignments((current) =>
@@ -239,7 +244,8 @@ function AssignmentsPage() {
           trimmedTitle,
           trimmedDescription || undefined,
           dueDate || undefined,
-          subjectId || undefined
+          subjectId || undefined,
+          completed
         )
 
         setAssignments((current) => [...current, created])
@@ -527,6 +533,22 @@ function AssignmentsPage() {
               </div>
 
               <div className="form-field form-field-wide">
+                <label
+                  className="assignment-completed-field"
+                  htmlFor="assignment-completed"
+                >
+                  <input
+                    id="assignment-completed"
+                    type="checkbox"
+                    checked={completed}
+                    onChange={(event) => setCompleted(event.target.checked)}
+                    disabled={saving}
+                  />
+                  <span>Mark as completed</span>
+                </label>
+              </div>
+
+              <div className="form-field form-field-wide">
                 <label htmlFor="assignment-description">
                   Description (optional)
                 </label>
@@ -740,6 +762,23 @@ function AssignmentsPage() {
                           <span>{formatDueDate(assignment.due_date)}</span>
 
                           <div className="assignment-actions">
+                            <button
+                              type="button"
+                              className={
+                                assignment.completed
+                                  ? 'reopen-action'
+                                  : 'complete-action'
+                              }
+                              onClick={() => handleToggleCompleted(assignment)}
+                              disabled={togglingId === assignment.id}
+                            >
+                              {togglingId === assignment.id
+                                ? 'Updating...'
+                                : assignment.completed
+                                  ? '↺ Reopen'
+                                  : '✓ Mark complete'}
+                            </button>
+
                             <button
                               type="button"
                               onClick={() => openEditForm(assignment)}

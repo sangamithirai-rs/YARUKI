@@ -28,7 +28,8 @@ export async function addAssignment(
   title: string,
   description?: string,
   dueDate?: string,
-  subjectId?: string
+  subjectId?: string,
+  completed = false
 ): Promise<Assignment> {
   const {
     data: { user },
@@ -46,7 +47,7 @@ export async function addAssignment(
       title,
       description: description || null,
       due_date: dueDate || null,
-      completed: false,
+      completed,
     })
     .select()
     .single()
