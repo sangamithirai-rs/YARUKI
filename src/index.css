@@ -3,6 +3,58 @@
    ========================================================= */
 
 :root {
+  /* COLORS */
+  --color-bg: #f7f5f0;
+  --color-surface: #ffffff;
+  --color-surface-muted: #fbfaf7;
+
+  --color-text: #171717;
+  --color-text-secondary: #62605b;
+  --color-text-muted: #8a877f;
+
+  --color-accent: #9a8064;
+  --color-accent-hover: #856b50;
+  --color-accent-soft: #eee7dc;
+
+  --color-border: #e6e1d8;
+  --color-border-strong: #d8d1c6;
+
+  --color-success: #347044;
+  --color-success-bg: #edf7ef;
+  --color-success-border: #d4ead8;
+
+  --color-error: #9b3333;
+  --color-error-bg: #fcecec;
+  --color-error-border: #f1d0d0;
+
+  /* Dark theme overrides – applied when .theme-dark class is present */
+}
+
+.theme-dark {
+  --color-bg: #1e1e1e;
+  --color-surface: #2a2a2a;
+  --color-surface-muted: #252525;
+
+  --color-text: #e5e5e5;
+  --color-text-secondary: #c0c0c0;
+  --color-text-muted: #a0a0a0;
+
+  --color-accent: #ff9800;
+  --color-accent-hover: #e68900;
+  --color-accent-soft: #332b21;
+
+  --color-border: #444444;
+  --color-border-strong: #555555;
+
+  --color-success: #4caf50;
+  --color-success-bg: #1b361b;
+  --color-success-border: #2e6b2e;
+
+  --color-error: #f44336;
+  --color-error-bg: #3b1b1b;
+  --color-error-border: #6b2e2e;
+}
+
   /* -------------------------------------------------------
      COLORS
      ------------------------------------------------------- */

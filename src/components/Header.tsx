@@ -12,6 +12,8 @@ function getGreeting(): string {
   return 'Good evening'
 }
 
+import ThemeToggle from "./ThemeToggle";
+
 function Header({ email, name }: HeaderProps) {
   const fullName =
     name?.trim() ||
@@ -50,8 +52,11 @@ function Header({ email, name }: HeaderProps) {
           <span>{email}</span>
         </div>
       </div>
+      <ThemeToggle />
     </header>
   )
 }
 
-export default Header
+export default Header;
+
+// Export the Header component as default
