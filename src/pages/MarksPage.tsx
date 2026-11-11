@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import {
   addMark,
@@ -9,13 +8,56 @@ import {
 import type { Mark } from '../services/markService'
 import { getSubjects } from '../services/subjectService'
 import type { Subject } from '../types/database'
+import { getErrorMessage } from '../lib/errors'
+import { parseDay, toDateKey } from '../lib/dates'
+
+const MAX_NAME_LENGTH = 100
+
+type SortMode = 'oldest' | 'newest' | 'highest' | 'lowest'
+
+// Avoids long floating-point tails such as 0.30000000000000004
+function formatNumber(value: number): string {
+  return String(Number(value.toFixed(2)))
+}
+
+function percentOf(mark: Mark): number {
+  return mark.max_marks > 0
+    ? (mark.marks_obtained / mark.max_marks) * 100
+    : 0
+}
+
+function getPercentClass(percent: number): string {
+  if (percent >= 75) return 'marks-percent-good'
+  if (percent >= 50) return 'marks-percent-ok'
+
+  return 'marks-percent-low'
+}
+
+// Oldest first; undated assessments go last, in the order they were added.
+function compareChronological(a: Mark, b: Mark): number {
+  if (a.assessment_date && b.assessment_date) {
+    const byDate = toDateKey(a.assessment_date).localeCompare(
+      toDateKey(b.assessment_date)
+    )
+
+    if (byDate !== 0) return byDate
+  } else if (a.assessment_date) {
+    return -1
+  } else if (b.assessment_date) {
+    return 1
+  }
+
+  return a.created_at.localeCompare(b.created_at)
+}
 
 function MarksPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubjectId, setSelectedSubjectId] = useState('')
-  const [loadedMarks, setMarks] = useState<Mark[]>([])
+  const [loaded, setLoaded] = useState<{
+    subjectId: string
+    marks: Mark[]
+  }>({ subjectId: '', marks: [] })
   const [loading, setLoading] = useState(true)
-  const [marksLoading, setMarksLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -27,29 +69,40 @@ function MarksPage() {
   const [maxMarks, setMaxMarks] = useState('')
   const [assessmentDate, setAssessmentDate] = useState('')
 
+  const [sortMode, setSortMode] = useState<SortMode>('oldest')
+  const [targetPercent, setTargetPercent] = useState('75')
+  const [nextMax, setNextMax] = useState('50')
+
   useEffect(() => {
+    let isMounted = true
+
     async function loadSubjects() {
       try {
-        setLoading(true)
-        setError('')
         const data = await getSubjects()
+
+        if (!isMounted) return
+
         setSubjects(data)
 
         if (data.length > 0) {
           setSelectedSubjectId(data[0].id)
         }
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Unable to load subjects.'
-        )
+        if (isMounted) {
+          setError(getErrorMessage(err, 'Unable to load subjects.'))
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
-    loadSubjects()
+    void loadSubjects()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   useEffect(() => {
@@ -57,27 +110,46 @@ function MarksPage() {
       return
     }
 
+    // The flag stops a slow response for a previous subject from
+    // overwriting the marks of the subject now on screen.
+    let isCurrent = true
+
     async function loadSubjectMarks() {
       try {
-        setMarksLoading(true)
-        setError('')
         const data = await getMarks(selectedSubjectId)
-        setMarks(data)
+
+        if (isCurrent) {
+          setLoaded({ subjectId: selectedSubjectId, marks: data })
+        }
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Unable to load marks.'
-        )
-      } finally {
-        setMarksLoading(false)
+        if (isCurrent) {
+          setError(getErrorMessage(err, 'Unable to load marks.'))
+          setLoaded({ subjectId: selectedSubjectId, marks: [] })
+        }
       }
     }
 
-    loadSubjectMarks()
+    void loadSubjectMarks()
+
+    return () => {
+      isCurrent = false
+    }
   }, [selectedSubjectId])
 
-  const marks = selectedSubjectId ? loadedMarks : []
+  const marks =
+    selectedSubjectId && loaded.subjectId === selectedSubjectId
+      ? loaded.marks
+      : []
+
+  const marksLoading =
+    Boolean(selectedSubjectId) && loaded.subjectId !== selectedSubjectId
+
+  function setMarks(updater: (current: Mark[]) => Mark[]) {
+    setLoaded((current) => ({
+      subjectId: current.subjectId,
+      marks: updater(current.marks),
+    }))
+  }
 
   function resetForm() {
     setAssessmentName('')
@@ -103,7 +175,9 @@ function MarksPage() {
     setAssessmentName(mark.assessment_name)
     setMarksObtained(String(mark.marks_obtained))
     setMaxMarks(String(mark.max_marks))
-    setAssessmentDate(mark.assessment_date ?? '')
+    setAssessmentDate(
+      mark.assessment_date ? toDateKey(mark.assessment_date) : ''
+    )
     setError('')
     setShowForm(true)
   }
@@ -123,6 +197,13 @@ function MarksPage() {
 
     if (!trimmedName) {
       setError('Please enter an assessment name.')
+      return
+    }
+
+    if (trimmedName.length > MAX_NAME_LENGTH) {
+      setError(
+        `Assessment name must be ${MAX_NAME_LENGTH} characters or fewer.`
+      )
       return
     }
 
@@ -151,7 +232,8 @@ function MarksPage() {
           assessment_name: trimmedName,
           marks_obtained: obtained,
           max_marks: maximum,
-          assessment_date: assessmentDate || '',
+          // null clears the date; an empty string would be rejected by the database
+          assessment_date: assessmentDate || null,
         })
 
         setMarks((current) =>
@@ -173,11 +255,7 @@ function MarksPage() {
 
       resetForm()
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to save marks.'
-      )
+      setError(getErrorMessage(err, 'Unable to save marks.'))
     } finally {
       setSaving(false)
     }
@@ -198,11 +276,7 @@ function MarksPage() {
         current.filter((item) => item.id !== mark.id)
       )
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Unable to delete assessment.'
-      )
+      setError(getErrorMessage(err, 'Unable to delete assessment.'))
     } finally {
       setDeletingId(null)
     }
@@ -226,6 +300,85 @@ function MarksPage() {
   const selectedSubject = subjects.find(
     (subject) => subject.id === selectedSubjectId
   )
+
+  // ---- insights -------------------------------------------------------
+
+  const chronological = [...marks].sort(compareChronological)
+
+  const best = chronological.reduce<Mark | null>(
+    (top, mark) => (!top || percentOf(mark) > percentOf(top) ? mark : top),
+    null
+  )
+
+  const lowest = chronological.reduce<Mark | null>(
+    (low, mark) => (!low || percentOf(mark) < percentOf(low) ? mark : low),
+    null
+  )
+
+  const latest = chronological[chronological.length - 1]
+
+  let trendPoints: number | null = null
+
+  if (chronological.length >= 2) {
+    const earlier = chronological.slice(0, -1)
+    const earlierAverage =
+      earlier.reduce((sum, mark) => sum + percentOf(mark), 0) /
+      earlier.length
+
+    trendPoints = percentOf(latest) - earlierAverage
+  }
+
+  const visibleMarks = [...marks].sort((a, b) => {
+    if (sortMode === 'newest') return compareChronological(b, a)
+    if (sortMode === 'highest') return percentOf(b) - percentOf(a)
+    if (sortMode === 'lowest') return percentOf(a) - percentOf(b)
+
+    return compareChronological(a, b)
+  })
+
+  // ---- target calculator ------------------------------------------------
+
+  const target = Number(targetPercent)
+  const nextMaxMarks = Number(nextMax)
+  const targetValid =
+    targetPercent.trim() !== '' &&
+    nextMax.trim() !== '' &&
+    Number.isFinite(target) &&
+    target > 0 &&
+    target <= 100 &&
+    Number.isFinite(nextMaxMarks) &&
+    nextMaxMarks > 0
+
+  let targetMessage = 'Enter a target between 1 and 100, and the marks of the next assessment.'
+
+  if (targetValid) {
+    const required =
+      (target / 100) * (totalMaximum + nextMaxMarks) - totalObtained
+
+    if (required <= 0) {
+      targetMessage = `You are already at or above ${target}% overall. Even a zero on the next assessment would keep you there.`
+    } else if (required > nextMaxMarks) {
+      targetMessage = `Even full marks on a ${formatNumber(nextMaxMarks)}-mark assessment would not reach ${target}% overall. You would need more assessments.`
+    } else {
+      const needed = Math.ceil(required * 100) / 100
+
+      targetMessage = `You need ${formatNumber(needed)} out of ${formatNumber(nextMaxMarks)} (${((needed / nextMaxMarks) * 100).toFixed(1)}%) on the next assessment to reach ${target}% overall.`
+    }
+  }
+
+  // ---- progress chart ---------------------------------------------------
+
+  const chartWidth = 300
+  const chartHeight = 90
+  const chartPoints = chronological.map((mark, index) => ({
+    id: mark.id,
+    label: `${mark.assessment_name}: ${percentOf(mark).toFixed(1)}%`,
+    x:
+      chronological.length === 1
+        ? chartWidth / 2
+        : 12 + (index / (chronological.length - 1)) * (chartWidth - 24),
+    y: 8 + (1 - Math.min(100, percentOf(mark)) / 100) * (chartHeight - 16),
+  }))
 
   return (
     <main className="page-main marks-page">
@@ -294,7 +447,7 @@ function MarksPage() {
               <div className="marks-summary-card">
                 <span>Total marks</span>
                 <strong>
-                  {totalObtained} / {totalMaximum}
+                  {formatNumber(totalObtained)} / {formatNumber(totalMaximum)}
                 </strong>
               </div>
 
@@ -306,6 +459,89 @@ function MarksPage() {
               </div>
             </div>
           </section>
+
+          {marks.length > 0 && best && lowest && latest && (
+            <>
+              <section className="marks-summary marks-insights">
+                <div className="marks-summary-card">
+                  <span>Highest</span>
+                  <strong>{percentOf(best).toFixed(1)}%</strong>
+                  <small>{best.assessment_name}</small>
+                </div>
+
+                <div className="marks-summary-card">
+                  <span>Lowest</span>
+                  <strong>{percentOf(lowest).toFixed(1)}%</strong>
+                  <small>{lowest.assessment_name}</small>
+                </div>
+
+                <div className="marks-summary-card">
+                  <span>Latest</span>
+                  <strong>{percentOf(latest).toFixed(1)}%</strong>
+                  <small
+                    className={
+                      trendPoints === null
+                        ? undefined
+                        : trendPoints >= 0
+                          ? 'marks-trend-up'
+                          : 'marks-trend-down'
+                    }
+                  >
+                    {trendPoints === null
+                      ? latest.assessment_name
+                      : `${trendPoints >= 0 ? '▲' : '▼'} ${Math.abs(
+                          trendPoints
+                        ).toFixed(1)} pts vs earlier average`}
+                  </small>
+                </div>
+              </section>
+
+              {chronological.length >= 2 && (
+                <section className="marks-chart-card">
+                  <h2>Progress over time</h2>
+
+                  <svg
+                    viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                    role="img"
+                    aria-label="Assessment percentages in date order"
+                    preserveAspectRatio="none"
+                  >
+                    <line
+                      className="marks-chart-guide"
+                      x1="0"
+                      x2={chartWidth}
+                      y1={8 + (chartHeight - 16) / 2}
+                      y2={8 + (chartHeight - 16) / 2}
+                    />
+
+                    <polyline
+                      className="marks-chart-line"
+                      points={chartPoints
+                        .map((point) => `${point.x},${point.y}`)
+                        .join(' ')}
+                    />
+
+                    {chartPoints.map((point) => (
+                      <circle
+                        key={point.id}
+                        className="marks-chart-dot"
+                        cx={point.x}
+                        cy={point.y}
+                        r="3.5"
+                      >
+                        <title>{point.label}</title>
+                      </circle>
+                    ))}
+                  </svg>
+
+                  <p className="marks-chart-note">
+                    Each dot is one assessment, oldest on the left. The
+                    dashed line marks 50%.
+                  </p>
+                </section>
+              )}
+            </>
+          )}
 
           {showForm && (
             <section className="subject-form-card marks-form-card">
@@ -340,6 +576,7 @@ function MarksPage() {
                         setAssessmentName(event.target.value)
                       }
                       placeholder="e.g. Internal Assessment 1"
+                      maxLength={MAX_NAME_LENGTH}
                       disabled={saving}
                     />
                   </div>
@@ -422,6 +659,24 @@ function MarksPage() {
                   {selectedSubject?.name ?? 'Selected subject'}
                 </p>
               </div>
+
+              {marks.length > 1 && (
+                <div className="marks-sort">
+                  <label htmlFor="marks-sort">Sort by</label>
+                  <select
+                    id="marks-sort"
+                    value={sortMode}
+                    onChange={(event) =>
+                      setSortMode(event.target.value as SortMode)
+                    }
+                  >
+                    <option value="oldest">Date (oldest first)</option>
+                    <option value="newest">Date (newest first)</option>
+                    <option value="highest">Percentage (high to low)</option>
+                    <option value="lowest">Percentage (low to high)</option>
+                  </select>
+                </div>
+              )}
             </div>
 
             {marksLoading ? (
@@ -458,11 +713,8 @@ function MarksPage() {
                   </thead>
 
                   <tbody>
-                    {marks.map((mark) => {
-                      const score =
-                        mark.max_marks > 0
-                          ? (mark.marks_obtained / mark.max_marks) * 100
-                          : 0
+                    {visibleMarks.map((mark) => {
+                      const score = percentOf(mark)
 
                       return (
                         <tr key={mark.id}>
@@ -471,18 +723,32 @@ function MarksPage() {
                           </td>
                           <td>
                             {mark.assessment_date
-                              ? new Date(
-                                  `${mark.assessment_date}T00:00:00`
+                              ? parseDay(
+                                  mark.assessment_date
                                 ).toLocaleDateString()
                               : '—'}
                           </td>
                           <td>
-                            {mark.marks_obtained} / {mark.max_marks}
+                            {formatNumber(mark.marks_obtained)} /{' '}
+                            {formatNumber(mark.max_marks)}
                           </td>
                           <td>
-                            <span className="marks-percent">
+                            <span
+                              className={`marks-percent ${getPercentClass(
+                                score
+                              )}`}
+                            >
                               {score.toFixed(1)}%
                             </span>
+
+                            <div className="marks-bar" aria-hidden="true">
+                              <span
+                                className={getPercentClass(score)}
+                                style={{
+                                  width: `${Math.min(100, score)}%`,
+                                }}
+                              />
+                            </div>
                           </td>
                           <td>
                             <div className="marks-row-actions">
@@ -515,6 +781,48 @@ function MarksPage() {
               </div>
             )}
           </section>
+
+          {marks.length > 0 && (
+            <section className="marks-target-card">
+              <h2>Target planner</h2>
+
+              <p className="marks-target-intro">
+                Find out what you need on the next assessment to reach a
+                goal for {selectedSubject?.name ?? 'this subject'}.
+              </p>
+
+              <div className="marks-target-fields">
+                <div className="form-field">
+                  <label htmlFor="target-percent">Target overall (%)</label>
+                  <input
+                    id="target-percent"
+                    type="number"
+                    min="1"
+                    max="100"
+                    step="any"
+                    value={targetPercent}
+                    onChange={(event) => setTargetPercent(event.target.value)}
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label htmlFor="target-next-max">
+                    Next assessment is out of
+                  </label>
+                  <input
+                    id="target-next-max"
+                    type="number"
+                    min="1"
+                    step="any"
+                    value={nextMax}
+                    onChange={(event) => setNextMax(event.target.value)}
+                  />
+                </div>
+              </div>
+
+              <p className="marks-target-result">{targetMessage}</p>
+            </section>
+          )}
         </>
       )}
     </main>

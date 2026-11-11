@@ -83,7 +83,7 @@ export async function updateMark(
     assessment_name?: string
     marks_obtained?: number
     max_marks?: number
-    assessment_date?: string
+    assessment_date?: string | null
   }
 ): Promise<Mark> {
   const { data, error } = await supabase
