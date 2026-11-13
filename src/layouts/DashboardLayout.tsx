@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Sidebar from '../components/Sidebar'
+import FocusTimerChip from '../components/FocusTimerChip'
 
 const SubjectsPage = lazy(() => import('../pages/SubjectsPage'))
 const MarksPage = lazy(() => import('../pages/MarksPage'))
@@ -113,6 +114,11 @@ function DashboardLayout({
           {renderPage()}
         </Suspense>
       </div>
+
+      <FocusTimerChip
+        hidden={activeItem === 'Study Planner'}
+        onOpen={() => handleNavigate('Study Planner')}
+      />
     </div>
   )
 }

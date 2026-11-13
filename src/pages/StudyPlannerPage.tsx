@@ -14,6 +14,7 @@ import {
   type StudySession,
 } from '../services/SessionService'
 import { getSubjects } from '../services/subjectService'
+import FocusTimerPanel from '../components/FocusTimerPanel'
 import type { Subject } from '../types/database'
 import { getErrorMessage } from '../lib/errors'
 import {
@@ -699,6 +700,13 @@ export default function StudyPlannerPage() {
 
       {tab === 'sessions' ? (
         <>
+          <FocusTimerPanel
+            subjects={subjects}
+            onSaved={(created) =>
+              setSessions((current) => [...current, created])
+            }
+          />
+
           <section className="subject-form-card study-planner-form-card">
             <div className="subject-form-header">
               <div>
