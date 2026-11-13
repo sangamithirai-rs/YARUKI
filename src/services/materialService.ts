@@ -36,6 +36,14 @@ export interface StudyMaterial {
   file_name: string | null
   file_path: string | null
   file_type: string | null
+  folder_id?: string | null
+  created_at: string
+}
+
+export interface MaterialFolder {
+  id: string
+  user_id: string
+  name: string
   created_at: string
 }
 
@@ -57,7 +65,8 @@ export async function getMaterials(): Promise<StudyMaterial[]> {
 export async function uploadMaterial(
   file: File,
   title: string,
-  subjectId?: string
+  subjectId?: string,
+  folderId?: string
 ): Promise<StudyMaterial> {
   const {
     data: { user },
@@ -98,6 +107,9 @@ export async function uploadMaterial(
       file_name: file.name,
       file_path: filePath,
       file_type: file.type,
+      // only sent when a folder is chosen, so uploads work even before
+      // the folders update has been run in Supabase
+      ...(folderId ? { folder_id: folderId } : {}),
     })
     .select()
     .single()
@@ -171,11 +183,13 @@ export async function updateMaterial(
   updates: {
     title?: string
     subjectId?: string | null
+    folderId?: string | null
   }
 ): Promise<StudyMaterial> {
   const databaseUpdates: {
     title?: string
     subject_id?: string | null
+    folder_id?: string | null
   } = {}
 
   if (updates.title !== undefined) {
@@ -184,6 +198,10 @@ export async function updateMaterial(
 
   if (updates.subjectId !== undefined) {
     databaseUpdates.subject_id = updates.subjectId
+  }
+
+  if (updates.folderId !== undefined) {
+    databaseUpdates.folder_id = updates.folderId
   }
 
   if (Object.keys(databaseUpdates).length === 0) {
@@ -202,4 +220,71 @@ export async function updateMaterial(
   }
 
   return data
+}
+
+// ---- Folders --------------------------------------------------------------
+
+export async function getFolders(): Promise<MaterialFolder[]> {
+  const { data, error } = await supabase
+    .from('material_folders')
+    .select('*')
+    .order('name', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return data ?? []
+}
+
+export async function createFolder(name: string): Promise<MaterialFolder> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error('User is not logged in')
+  }
+
+  const { data, error } = await supabase
+    .from('material_folders')
+    .insert({ user_id: user.id, name })
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+export async function renameFolder(
+  id: string,
+  name: string
+): Promise<MaterialFolder> {
+  const { data, error } = await supabase
+    .from('material_folders')
+    .update({ name })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    throw error
+  }
+
+  return data
+}
+
+// Deleting a folder keeps its files; they move back to "No folder".
+export async function deleteFolder(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('material_folders')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    throw error
+  }
 }
