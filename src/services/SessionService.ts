@@ -28,7 +28,8 @@ export async function addStudySession(
   sessionDate: string,
   topic?: string,
   durationMinutes?: number,
-  subjectId?: string
+  subjectId?: string,
+  completed = false
 ): Promise<StudySession> {
   const {
     data: { user },
@@ -46,7 +47,7 @@ export async function addStudySession(
       topic: topic || null,
       duration_minutes: durationMinutes ?? null,
       session_date: sessionDate,
-      completed: false,
+      completed,
     })
     .select()
     .single()

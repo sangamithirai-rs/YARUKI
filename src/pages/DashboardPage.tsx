@@ -185,7 +185,7 @@ function summarize(data: DashboardData) {
     {
       label: 'Plan a study session',
       detail: 'Block out time to study and log your progress.',
-      done: sessions.length > 0,
+      done: sessions.length > 0 || plans.length > 0,
       page: 'Study Planner',
     },
   ]
