@@ -114,13 +114,19 @@ export async function uploadMaterial(
   return data
 }
 
-// Get a temporary download URL
+// Get a temporary link (valid for one hour).
+// Pass downloadName to make the browser save the file instead of showing it.
 export async function getMaterialUrl(
-  filePath: string
+  filePath: string,
+  downloadName?: string
 ): Promise<string> {
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)
-    .createSignedUrl(filePath, 3600)
+    .createSignedUrl(
+      filePath,
+      3600,
+      downloadName ? { download: downloadName } : undefined
+    )
 
   if (error) {
     throw error
@@ -134,7 +140,7 @@ export async function getMaterialUrl(
 // points to a missing file. A leftover file is harmless and is logged.
 export async function deleteMaterial(
   id: string,
-  filePath: string
+  filePath: string | null
 ): Promise<void> {
   const { error: databaseError } = await supabase
     .from('study_materials')
@@ -143,6 +149,11 @@ export async function deleteMaterial(
 
   if (databaseError) {
     throw databaseError
+  }
+
+  // An entry without a stored file has nothing to remove from storage
+  if (!filePath) {
+    return
   }
 
   const { error: fileError } = await supabase.storage

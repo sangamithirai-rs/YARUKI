@@ -5658,3 +5658,57 @@
     flex-wrap: wrap;
   }
 }
+
+
+/* Materials: 3-card overview, 3-field toolbar, file-type colours */
+
+.materials-overview-3 {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.materials-toolbar-3 {
+  grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(160px, 1fr));
+}
+
+.materials-toolbar-3 select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.material-file-type.material-type-pdf {
+  background: rgba(192, 57, 43, 0.14);
+  color: #c0392b;
+}
+
+.material-file-type.material-type-doc {
+  background: rgba(43, 108, 176, 0.14);
+  color: #2b6cb0;
+}
+
+.material-file-type.material-type-sheet {
+  background: rgba(47, 133, 90, 0.14);
+  color: #2f855a;
+}
+
+.material-file-type.material-type-slides {
+  background: rgba(192, 86, 33, 0.14);
+  color: #c05621;
+}
+
+.material-file-type.material-type-image {
+  background: rgba(107, 70, 193, 0.14);
+  color: #6b46c1;
+}
+
+@media (max-width: 760px) {
+  .materials-toolbar-3 {
+    grid-template-columns: 1fr;
+  }
+}
