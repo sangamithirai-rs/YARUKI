@@ -14,6 +14,7 @@ import type { StudySession } from '../services/SessionService'
 import type { Subject } from '../types/database'
 import { dateKeyFromToday } from '../lib/dates'
 import { getErrorMessage } from '../lib/errors'
+import { usePreferences } from '../lib/preferences'
 import '../focusTimer.css'
 
 const PRESETS = [15, 25, 45, 60]
@@ -32,7 +33,8 @@ export default function FocusTimerPanel({
 
   const [topic, setTopic] = useState('')
   const [subjectId, setSubjectId] = useState('')
-  const [minutes, setMinutes] = useState('25')
+  const preferences = usePreferences()
+  const [minutes, setMinutes] = useState(String(preferences.focusMinutes))
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [saving, setSaving] = useState(false)

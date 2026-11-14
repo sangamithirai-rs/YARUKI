@@ -287,6 +287,20 @@ function DashboardPage() {
     }
   }, [reloadKey])
 
+  // Keep the greeting in step when the name is changed in Settings
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'USER_UPDATED' && session?.user) {
+        setEmail(session.user.email)
+        setName(session.user.user_metadata?.full_name as string | undefined)
+      }
+    })
+
+    return () => {
+      data.subscription.unsubscribe()
+    }
+  }, [])
+
   function handleRetry() {
     setLoading(true)
     setError('')

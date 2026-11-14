@@ -1,29 +1,15 @@
-import { useEffect } from 'react';
+import { toggleTheme } from '../lib/theme'
 
 /**
- * Simple theme toggle that switches between the default light theme and the
- * `.theme-dark` class defined in `src/index.css`.
- *
- * The toggle persists the user's preference in `localStorage` so the choice is
- * retained across page reloads.
+ * Header button that switches between the light theme and the `.theme-dark`
+ * class defined in `src/index.css`. The saved choice is applied at start-up
+ * (see `initTheme` in `src/main.tsx`) and can also be changed in Settings.
  */
 export default function ThemeToggle() {
-  const toggle = () => {
-    const html = document.documentElement;
-    const isDark = html.classList.toggle('theme-dark');
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  };
-
-  // Initialise theme from saved preference
-  useEffect(() => {
-    if (localStorage.getItem('theme') === 'dark') {
-      document.documentElement.classList.add('theme-dark');
-    }
-  }, []);
-
   return (
     <button
-      onClick={toggle}
+      type="button"
+      onClick={toggleTheme}
       style={{
         marginLeft: '1rem',
         padding: '0.4rem 0.8rem',
@@ -36,6 +22,5 @@ export default function ThemeToggle() {
     >
       Toggle Theme
     </button>
-  );
+  )
 }
-

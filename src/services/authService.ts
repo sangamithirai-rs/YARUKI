@@ -56,3 +56,37 @@ export async function getCurrentUser() {
 
   return user
 }
+
+export async function updateDisplayName(fullName: string) {
+  const { data, error } = await supabase.auth.updateUser({
+    data: { full_name: fullName },
+  })
+
+  if (error) {
+    throw error
+  }
+
+  // Keep the profiles table in step with the sign-up name (best effort)
+  if (data.user) {
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName })
+      .eq('id', data.user.id)
+
+    if (profileError) {
+      console.warn('Profile name was not updated:', profileError)
+    }
+  }
+
+  return data.user
+}
+
+export async function changePassword(newPassword: string) {
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  })
+
+  if (error) {
+    throw error
+  }
+}
