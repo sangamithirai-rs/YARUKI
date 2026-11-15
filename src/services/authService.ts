@@ -90,3 +90,15 @@ export async function changePassword(newPassword: string) {
     throw error
   }
 }
+
+// Sends a "reset your password" email. The link in it returns to this site,
+// where the app asks for a new password (see ResetPasswordPage).
+export async function requestPasswordReset(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin,
+  })
+
+  if (error) {
+    throw error
+  }
+}

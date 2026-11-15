@@ -4,13 +4,23 @@ import { supabase } from './lib/supabase'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import DashboardPage from './pages/DashboardPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import './App.css'
 type AuthMode = 'login' | 'signup'
+
+// The link in a password-reset email returns here with "type=recovery" in the
+// address. It is read on the first render, before Supabase tidies the address.
+function openedFromRecoveryLink(): boolean {
+  return /type=recovery/.test(
+    `${window.location.search}${window.location.hash}`
+  )
+}
 
 function App() {
   const [user, setUser] = useState<User | null>(null)
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loading, setLoading] = useState(true)
+  const [recovering, setRecovering] = useState(openedFromRecoveryLink)
 
   useEffect(() => {
     checkSession()
@@ -18,8 +28,14 @@ function App() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setUser(session?.user ?? null)
+
+        // Opening the emailed reset link signs the person in; hold them on
+        // the "choose a new password" screen until they have set one.
+        if (event === 'PASSWORD_RECOVERY') {
+          setRecovering(true)
+        }
       }
     )
 
@@ -43,6 +59,15 @@ function App() {
         <div className="loading-logo">YARUKI</div>
         <p>Loading your workspace...</p>
       </div>
+    )
+  }
+
+  if (user && recovering) {
+    return (
+      <ResetPasswordPage
+        onDone={() => setRecovering(false)}
+        onCancel={() => setRecovering(false)}
+      />
     )
   }
 
