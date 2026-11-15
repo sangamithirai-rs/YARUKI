@@ -3,6 +3,8 @@
    ========================================================= */
 
 :root {
+  color-scheme: light;
+
   /* COLORS */
   --color-bg: #f7f5f0;
   --color-surface: #ffffff;
@@ -86,29 +88,154 @@
     sans-serif;
 }
 
+/* =========================================================
+   DARK THEME
+   A warm "espresso" palette that matches the light theme's cream and
+   taupe look, instead of cold gray with bright orange.
+   Every text / background pair below is at least 4.5:1 (body text is
+   better than 14:1), so it stays readable in dim rooms.
+   To restyle it, change the values in this one block.
+   ========================================================= */
+
 .theme-dark {
-  --color-bg: #1e1e1e;
-  --color-surface: #2a2a2a;
-  --color-surface-muted: #252525;
+  /* Tells the browser to draw date pickers, scrollbars, select menus
+     and autofill in dark too */
+  color-scheme: dark;
 
-  --color-text: #e5e5e5;
-  --color-text-secondary: #c0c0c0;
-  --color-text-muted: #a0a0a0;
+  --color-bg: #151311;
+  --color-surface: #211e1b;
+  --color-surface-muted: #1a1815;
 
-  --color-accent: #ff9800;
-  --color-accent-hover: #e68900;
-  --color-accent-soft: #332b21;
+  --color-text: #f3eee6;
+  --color-text-secondary: #cbc3b6;
+  --color-text-muted: #a39b8e;
 
-  --color-border: #444444;
-  --color-border-strong: #555555;
+  --color-accent: #d2b48c;
+  --color-accent-hover: #e3c9a6;
+  --color-accent-soft: #2f2820;
 
-  --color-success: #4caf50;
-  --color-success-bg: #1b361b;
-  --color-success-border: #2e6b2e;
+  --color-border: #35302a;
+  --color-border-strong: #554d43;
 
-  --color-error: #f44336;
-  --color-error-bg: #3b1b1b;
-  --color-error-border: #6b2e2e;
+  --color-success: #7fc890;
+  --color-success-bg: #17291d;
+  --color-success-border: #2c4d36;
+
+  --color-error: #f2918c;
+  --color-error-bg: #2d1817;
+  --color-error-border: #5c2d2b;
+
+  /* Used for "due soon" style badges (amber) */
+  --color-warning: #e8bb6a;
+  --color-warning-bg: rgba(214, 160, 60, 0.16);
+  --color-warning-border: rgba(214, 160, 60, 0.35);
+
+  /* Shadows need to be darker to show up on a dark page */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 70px rgba(0, 0, 0, 0.6);
+
+  --focus-ring: 0 0 0 3px rgba(210, 180, 140, 0.38);
+  --focus-ring-dark: 0 0 0 3px rgba(243, 238, 230, 0.35);
+}
+
+/* ---------------------------------------------------------
+   Dark theme: things that were hard-coded for the light theme
+   (white backgrounds, white text on filled buttons, light-only
+   badge colours). "html.theme-dark" keeps these stronger than the
+   page styles that come later.
+   --------------------------------------------------------- */
+
+/* Filled buttons and badges use the text colour as their fill, which is
+   light in dark mode, so their lettering must be dark. */
+html.theme-dark .page-primary-button,
+html.theme-dark .auth-primary-button,
+html.theme-dark .dark-action,
+html.theme-dark .brand-mark,
+html.theme-dark .auth-brand::before,
+html.theme-dark .journey-step.active > span,
+html.theme-dark .assignment-check.checked,
+html.theme-dark .confirm-danger,
+html.theme-dark .dashboard-test button {
+  color: var(--color-bg);
+}
+
+html.theme-dark .page-primary-button:hover:not(:disabled),
+html.theme-dark .auth-primary-button:hover:not(:disabled),
+html.theme-dark .dark-action:hover {
+  border-color: #ffffff;
+  background: #ffffff;
+}
+
+html.theme-dark .assignment-actions button.complete-action:hover:not(:disabled),
+html.theme-dark .study-session-actions button.complete-action:hover:not(:disabled) {
+  color: var(--color-bg);
+}
+
+/* Surfaces that were white */
+html.theme-dark .auth-card {
+  background: rgba(33, 30, 27, 0.94);
+}
+
+html.theme-dark .auth-card input:focus {
+  background: var(--color-surface);
+}
+
+html.theme-dark .auth-card input:hover,
+html.theme-dark .form-field input:hover:not(:disabled),
+html.theme-dark .marks-subject-select select:hover {
+  border-color: #655c4f;
+}
+
+html.theme-dark .mobile-topbar {
+  background: rgba(21, 19, 17, 0.92);
+}
+
+html.theme-dark .subjects-state-card,
+html.theme-dark .marks-state-card,
+html.theme-dark .exams-state-card,
+html.theme-dark .assignments-state-card {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Amber "soon" badges */
+html.theme-dark .exam-countdown-soon,
+html.theme-dark .assignment-due-label.assignment-soon,
+html.theme-dark .study-plan-when-badge,
+html.theme-dark .marks-percent-ok {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+/* File-type badges: lighter lettering so they stay readable */
+html.theme-dark .material-file-type.material-type-pdf {
+  background: rgba(192, 57, 43, 0.18);
+  color: #f28f84;
+}
+
+html.theme-dark .material-file-type.material-type-doc {
+  background: rgba(43, 108, 176, 0.18);
+  color: #7db6ea;
+}
+
+html.theme-dark .material-file-type.material-type-sheet {
+  background: rgba(47, 133, 90, 0.18);
+  color: #72d4a0;
+}
+
+html.theme-dark .material-file-type.material-type-slides {
+  background: rgba(192, 86, 33, 0.18);
+  color: #f2a574;
+}
+
+html.theme-dark .material-file-type.material-type-image {
+  background: rgba(107, 70, 193, 0.18);
+  color: #bba3f4;
+}
+
+html.theme-dark ::selection {
+  background: rgba(210, 180, 140, 0.35);
 }
 
 /* =========================================================
