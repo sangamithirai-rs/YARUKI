@@ -9,6 +9,7 @@ import {
 import type { Exam } from '../services/examService'
 import { getSubjects } from '../services/subjectService'
 import type { Subject } from '../types/database'
+import { confirmDialog } from '../lib/confirm'
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24
 const MAX_TITLE_LENGTH = 100
@@ -211,7 +212,7 @@ function ExamsPage() {
   }
 
   async function handleDelete(exam: Exam) {
-    const confirmed = window.confirm(
+    const confirmed = await confirmDialog(
       `Delete the exam "${exam.title}"?`
     )
 
@@ -348,6 +349,7 @@ function ExamsPage() {
                 <label htmlFor="exam-title">Exam title</label>
                 <input
                   id="exam-title"
+                  autoFocus
                   type="text"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}

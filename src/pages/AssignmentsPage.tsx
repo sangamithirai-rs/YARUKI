@@ -15,6 +15,7 @@ import {
   parseDay,
   toDateKey,
 } from '../lib/dates'
+import { confirmDialog } from '../lib/confirm'
 
 const MAX_TITLE_LENGTH = 100
 const MAX_DESCRIPTION_LENGTH = 1000
@@ -279,7 +280,7 @@ function AssignmentsPage() {
   }
 
   async function handleDelete(assignment: Assignment) {
-    const confirmed = window.confirm(
+    const confirmed = await confirmDialog(
       `Delete the assignment "${assignment.title}"?`
     )
 
@@ -456,6 +457,7 @@ function AssignmentsPage() {
                 <label htmlFor="assignment-title">Assignment title</label>
                 <input
                   id="assignment-title"
+                  autoFocus
                   type="text"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}

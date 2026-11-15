@@ -1,26 +1,23 @@
-import { toggleTheme } from '../lib/theme'
+import { toggleTheme, useIsDark } from '../lib/theme'
 
 /**
- * Header button that switches between the light theme and the `.theme-dark`
- * class defined in `src/index.css`. The saved choice is applied at start-up
- * (see `initTheme` in `src/main.tsx`) and can also be changed in Settings.
+ * Header button that switches between the light and dark themes.
+ * The choice is remembered, and can also be set to follow the device in
+ * Settings.
  */
 export default function ThemeToggle() {
+  const isDark = useIsDark()
+  const label = isDark ? 'Switch to light theme' : 'Switch to dark theme'
+
   return (
     <button
       type="button"
+      className="theme-toggle"
       onClick={toggleTheme}
-      style={{
-        marginLeft: '1rem',
-        padding: '0.4rem 0.8rem',
-        background: 'var(--color-accent)',
-        color: 'var(--color-text)',
-        border: 'none',
-        borderRadius: 'var(--radius-md)',
-        cursor: 'pointer',
-      }}
+      aria-label={label}
+      title={label}
     >
-      Toggle Theme
+      <span aria-hidden="true">{isDark ? '☀' : '☾'}</span>
     </button>
   )
 }

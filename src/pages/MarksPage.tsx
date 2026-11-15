@@ -10,6 +10,7 @@ import { getSubjects } from '../services/subjectService'
 import type { Subject } from '../types/database'
 import { getErrorMessage } from '../lib/errors'
 import { parseDay, toDateKey } from '../lib/dates'
+import { confirmDialog } from '../lib/confirm'
 
 const MAX_NAME_LENGTH = 100
 
@@ -262,7 +263,7 @@ function MarksPage() {
   }
 
   async function handleDelete(mark: Mark) {
-    const confirmed = window.confirm(
+    const confirmed = await confirmDialog(
       `Delete the assessment "${mark.assessment_name}"?`
     )
 
@@ -571,6 +572,7 @@ function MarksPage() {
                     <label htmlFor="assessment-name">Assessment name</label>
                     <input
                       id="assessment-name"
+                  autoFocus
                       value={assessmentName}
                       onChange={(event) =>
                         setAssessmentName(event.target.value)

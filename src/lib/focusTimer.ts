@@ -162,6 +162,12 @@ function setState(next: TimerState) {
 
 // ---- actions ---------------------------------------------------------------
 
+// The clock moves in whole seconds, so the end time is lined up with one.
+// Without this, a 25-minute timer would show 25:01 for its first second.
+function endTimeAfter(ms: number): number {
+  return Math.floor((Date.now() + ms) / 1000) * 1000
+}
+
 export function startFocusTimer(options: {
   minutes: number
   topic: string
@@ -176,7 +182,7 @@ export function startFocusTimer(options: {
 
   setState({
     status: 'running',
-    endsAt: Date.now() + targetMs,
+    endsAt: endTimeAfter(targetMs),
     targetMs,
     topic: options.topic,
     subjectId: options.subjectId,
@@ -204,7 +210,7 @@ export function resumeFocusTimer() {
 
   setState({
     status: 'running',
-    endsAt: Date.now() + state.remainingMs,
+    endsAt: endTimeAfter(state.remainingMs),
     targetMs: state.targetMs,
     topic: state.topic,
     subjectId: state.subjectId,

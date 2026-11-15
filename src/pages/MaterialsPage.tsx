@@ -20,6 +20,7 @@ import { getSubjects } from '../services/subjectService'
 import type { Subject } from '../types/database'
 import { getErrorMessage } from '../lib/errors'
 import { dateKeyFromToday } from '../lib/dates'
+import { confirmDialog } from '../lib/confirm'
 
 const MAX_TITLE_LENGTH = 120
 const MAX_FOLDER_NAME_LENGTH = 60
@@ -536,7 +537,7 @@ export default function MaterialsPage() {
 
     const count = folderCounts.get(activeFolderRecord.id) ?? 0
 
-    const confirmed = window.confirm(
+    const confirmed = await confirmDialog(
       count > 0
         ? `Delete the folder “${activeFolderRecord.name}”? Its ${plural(count, 'file')} will be kept and moved to “No folder”.`
         : `Delete the empty folder “${activeFolderRecord.name}”?`
@@ -693,7 +694,7 @@ export default function MaterialsPage() {
   }
 
   async function handleDelete(material: StudyMaterial) {
-    const confirmed = window.confirm(
+    const confirmed = await confirmDialog(
       material.file_path
         ? `Delete "${material.title}"? This will remove the stored file.`
         : `Delete "${material.title}"? It has no stored file, so only the entry is removed.`

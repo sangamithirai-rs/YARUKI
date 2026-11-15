@@ -15,6 +15,7 @@ import type { Subject } from '../types/database'
 import { dateKeyFromToday } from '../lib/dates'
 import { getErrorMessage } from '../lib/errors'
 import { usePreferences } from '../lib/preferences'
+import { confirmDialog } from '../lib/confirm'
 import '../focusTimer.css'
 
 const PRESETS = [15, 25, 45, 60]
@@ -111,10 +112,10 @@ export default function FocusTimerPanel({
     }
   }
 
-  function handleDiscard() {
+  async function handleDiscard() {
     const confirmed =
       elapsedMinutes < 1 ||
-      window.confirm('Discard this focus session without saving it?')
+      await confirmDialog('Discard this focus session without saving it?')
 
     if (confirmed) {
       cancelFocusTimer()

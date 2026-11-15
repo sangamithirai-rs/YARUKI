@@ -25,6 +25,7 @@ import {
   parseDay,
   toDateKey,
 } from '../lib/dates'
+import { confirmDialog } from '../lib/confirm'
 
 const MAX_TITLE_LENGTH = 120
 const MAX_DESCRIPTION_LENGTH = 1000
@@ -319,7 +320,7 @@ export default function StudyPlannerPage() {
   }
 
   async function handleDeleteSession(session: StudySession) {
-    const confirmed = window.confirm(
+    const confirmed = await confirmDialog(
       `Delete the study session "${session.topic || 'Study session'}"?`
     )
 
@@ -434,7 +435,7 @@ export default function StudyPlannerPage() {
   }
 
   async function handleDeletePlan(plan: StudyPlan) {
-    const confirmed = window.confirm(
+    const confirmed = await confirmDialog(
       `Delete the study plan "${plan.title}"?`
     )
 

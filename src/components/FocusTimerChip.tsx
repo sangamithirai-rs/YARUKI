@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { formatClock, useFocusTimer } from '../lib/focusTimer'
+import { setTitlePrefix } from '../lib/pageTitle'
 import '../focusTimer.css'
 
 const ALERTED_KEY = 'yaruki.focusTimer.alerted'
@@ -59,14 +60,10 @@ export default function FocusTimerChip({
   useEffect(() => {
     if (!active) return
 
-    const original = document.title
-
-    document.title = finished
-      ? "⏱ Time's up · YARUKI"
-      : `⏱ ${clock} · YARUKI`
+    setTitlePrefix(finished ? '⏱ Time’s up' : `⏱ ${clock}`)
 
     return () => {
-      document.title = original
+      setTitlePrefix('')
     }
   }, [active, finished, clock])
 

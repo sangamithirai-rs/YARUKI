@@ -52,9 +52,12 @@ function Sidebar({
             className={`sidebar-item ${
               activeItem === item.label ? 'active' : ''
             }`}
+            aria-current={activeItem === item.label ? 'page' : undefined}
             onClick={() => onNavigate(item.label)}
           >
-            <span className="sidebar-icon">{item.icon}</span>
+            <span className="sidebar-icon" aria-hidden="true">
+              {item.icon}
+            </span>
             <span>{item.label}</span>
           </button>
         ))}
@@ -66,9 +69,12 @@ function Sidebar({
           className={`sidebar-item ${
             activeItem === 'Settings' ? 'active' : ''
           }`}
+          aria-current={activeItem === 'Settings' ? 'page' : undefined}
           onClick={() => onNavigate('Settings')}
         >
-          <span className="sidebar-icon">⚙</span>
+          <span className="sidebar-icon" aria-hidden="true">
+            ⚙
+          </span>
           <span>Settings</span>
         </button>
 

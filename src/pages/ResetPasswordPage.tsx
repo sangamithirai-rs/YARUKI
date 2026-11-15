@@ -17,6 +17,7 @@ interface ResetPasswordPageProps {
 function ResetPasswordPage({ onDone, onCancel }: ResetPasswordPageProps) {
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [showPasswords, setShowPasswords] = useState(false)
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState(false)
@@ -107,7 +108,7 @@ function ResetPasswordPage({ onDone, onCancel }: ResetPasswordPageProps) {
 
           <input
             id="new-password"
-            type="password"
+            type={showPasswords ? 'text' : 'password'}
             autoComplete="new-password"
             placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
             value={password}
@@ -119,12 +120,21 @@ function ResetPasswordPage({ onDone, onCancel }: ResetPasswordPageProps) {
 
           <input
             id="confirm-password"
-            type="password"
+            type={showPasswords ? 'text' : 'password'}
             autoComplete="new-password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
             disabled={saving}
           />
+
+          <label className="auth-show-password">
+            <input
+              type="checkbox"
+              checked={showPasswords}
+              onChange={(e) => setShowPasswords(e.target.checked)}
+            />
+            <span>Show passwords</span>
+          </label>
 
           {error && <div className="auth-error">{error}</div>}
 

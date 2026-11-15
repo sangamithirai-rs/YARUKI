@@ -1,0 +1,301 @@
+/* Shared UX pieces: dialogs, skip link, banners, theme button, auth extras.
+   Loaded after App.css (see main.tsx) so these rules win ties. */
+
+/* ---------- Focus target for page changes ---------- */
+
+.dashboard-content:focus {
+  outline: none;
+}
+
+/* ---------- Skip link (keyboard users) ---------- */
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 3000;
+  padding: 10px 16px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ---------- Offline banner ---------- */
+
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  padding: 10px 20px;
+  background: var(--color-error-bg);
+  border-bottom: 1px solid var(--color-error-border);
+  color: var(--color-error);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------- Confirmation dialog ---------- */
+
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(20, 20, 20, 0.5);
+  animation: confirm-fade var(--transition-fast, 150ms) ease-out;
+}
+
+.confirm-dialog {
+  width: min(440px, 100%);
+  padding: 26px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl, 16px);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.confirm-dialog h2 {
+  margin: 0 0 10px;
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.confirm-dialog p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.confirm-danger {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-md);
+  background: var(--color-error);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.confirm-danger:hover {
+  filter: brightness(0.92);
+}
+
+.confirm-danger:focus-visible,
+.confirm-actions button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@keyframes confirm-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-backdrop {
+    animation: none;
+  }
+}
+
+/* ---------- Error fallback ---------- */
+
+.error-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.error-fallback-card {
+  max-width: 460px;
+  padding: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+
+.error-fallback-card h1 {
+  margin: 0 0 10px;
+  color: var(--color-text);
+  font-size: 22px;
+}
+
+.error-fallback-card p {
+  margin: 0 0 22px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.error-fallback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ---------- Header theme button ---------- */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: 12px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.theme-toggle:hover {
+  background: var(--color-accent-soft);
+}
+
+.theme-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ---------- Sign-in forms ---------- */
+
+.auth-password-field {
+  position: relative;
+}
+
+.auth-card .auth-password-field input {
+  padding-right: 72px;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-accent-hover);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.auth-password-toggle:hover {
+  background: var(--color-accent-soft);
+}
+
+.auth-password-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.auth-card label.auth-show-password {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.auth-card .auth-show-password input {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.auth-strength {
+  margin: 8px 0 0;
+}
+
+.auth-strength small {
+  display: block;
+  margin-top: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.auth-strength-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.auth-strength-bar span {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.auth-strength-bar.strength-1 span:nth-child(-n + 1) {
+  background: var(--color-error);
+}
+
+.auth-strength-bar.strength-2 span:nth-child(-n + 2) {
+  background: #c8892a;
+}
+
+.auth-strength-bar.strength-3 span {
+  background: var(--color-success);
+}
+
+/* ---------- Touch-friendly sizes on phones ---------- */
+
+@media (max-width: 760px) {
+  .confirm-actions button {
+    flex: 1 1 140px;
+  }
+
+  .theme-toggle {
+    width: 44px;
+    height: 44px;
+  }
+}

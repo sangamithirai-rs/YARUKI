@@ -64,6 +64,7 @@ export function initTheme() {
     () => {
       if (getThemePreference() === 'system') {
         applyTheme('system')
+        notify()
       }
     }
   )
@@ -86,4 +87,14 @@ function subscribe(listener: () => void) {
 
 export function useThemePreference(): ThemePreference {
   return useSyncExternalStore(subscribe, getThemePreference, () => 'light')
+}
+
+function isDarkActive(): boolean {
+  return document.documentElement.classList.contains('theme-dark')
+}
+
+// True while the dark theme is actually showing (including "System" mode
+// on a dark device), and updates when it changes.
+export function useIsDark(): boolean {
+  return useSyncExternalStore(subscribe, isDarkActive, () => false)
 }

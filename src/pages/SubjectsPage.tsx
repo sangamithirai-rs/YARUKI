@@ -13,6 +13,7 @@ import { getExams } from '../services/examService'
 import { getAssignments } from '../services/assignmentService'
 import { getMaterials } from '../services/materialService'
 import { getStudySessions } from '../services/SessionService'
+import { confirmDialog } from '../lib/confirm'
 
 const MAX_NAME_LENGTH = 100
 const MAX_CODE_LENGTH = 20
@@ -364,7 +365,7 @@ function SubjectsPage() {
         ].filter(Boolean)
       : []
 
-    const confirmed = window.confirm(
+    const confirmed = await confirmDialog(
       `Delete "${subject.name}"?` +
         (linked.length > 0
           ? `\n\nIt has ${linked.join(', ')} linked to it. ` +
@@ -501,6 +502,7 @@ function SubjectsPage() {
 
                 <input
                   id="subject-name"
+                  autoFocus
                   type="text"
                   placeholder="e.g. Database Management Systems"
                   maxLength={MAX_NAME_LENGTH}
